@@ -10,7 +10,12 @@
     "build:web": "npm run build --workspace @omr/web",
     "lint:web": "npm run lint --workspace @omr/web",
     "typecheck:web": "npm run typecheck --workspace @omr/web",
-    "check:web": "npm run lint:web && npm run typecheck:web && npm run build:web"
+    "check:web": "npm run lint:web && npm run typecheck:web && npm run build:web",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:reset": "npx supabase db reset",
+    "db:push": "npx supabase db push",
+    "db:types": "npx supabase gen types typescript --local > apps/web/src/lib/supabase/database.types.ts"
   },
   "engines": {
     "node": ">=20.9.0"
