@@ -18,7 +18,7 @@ export default async function SettingsPage({searchParams}:Props) {
   const current=await getCurrentInstitution(session.user.id,params.institutionId);
   if(!current) return <section className="management-page"><h1>Institution settings</h1><p>Create an institution to configure its profile.</p><Link className="button button-primary" href="/dashboard">Go to dashboard</Link></section>;
   const canManage=["owner","admin"].includes(String(current.role));
-  const institution=current.institution as typeof current.institution & {email?:string;phone?:string;address?:string;website?:string};
+  const institution=current.institution;
   return <div className="management-page">
     <div className="page-topline"><span className="eyebrow">WORKSPACE PREFERENCES</span><span className="secure-chip"><Settings2 size={14}/> Institution settings</span></div>
     <section className="management-intro"><p className="muted-copy">Manage your organization</p><h1>Settings</h1><p>Update the public profile and workspace identity for your institution.</p></section>
