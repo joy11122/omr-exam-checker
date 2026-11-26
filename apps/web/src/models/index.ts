@@ -55,8 +55,38 @@ const invitationSchema = new Schema({
 invitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 invitationSchema.index({ institutionId: 1, email: 1, acceptedAt: 1 });
 
+
+const answerSchema = new Schema({
+  questionNumber: { type: Number, required: true, min: 1 },
+  option: { type: String, required: true, enum: ["A", "B", "C", "D"] },
+}, { _id: false });
+
+const examSubjectSchema = new Schema({
+  name: { type: String, required: true, trim: true, maxlength: 80 },
+  questionCount: { type: Number, required: true, min: 1, max: 300 },
+  marksPerQuestion: { type: Number, required: true, min: 0.01, max: 100 },
+  negativeMarksPerQuestion: { type: Number, required: true, min: 0, max: 100, default: 0 },
+  answerKey: { type: [answerSchema], default: [] },
+  answerKeyUpdatedAt: { type: Date, default: null },
+});
+
+const examSchema = new Schema({
+  institutionId: { type: Schema.Types.ObjectId, ref: "Institution", required: true, index: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  title: { type: String, required: true, trim: true, maxlength: 120 },
+  examCode: { type: String, required: true, trim: true, uppercase: true, maxlength: 30 },
+  description: { type: String, trim: true, maxlength: 500, default: "" },
+  startsAt: { type: Date, default: null },
+  durationMinutes: { type: Number, required: true, min: 5, max: 600 },
+  status: { type: String, enum: ["draft", "scheduled", "completed"], default: "draft", index: true },
+  subjects: { type: [examSubjectSchema], required: true, validate: [(value: unknown[]) => value.length > 0 && value.length <= 20, "An exam must have 1–20 subjects"] },
+}, { timestamps: true, collection: "exams" });
+examSchema.index({ institutionId: 1, examCode: 1 }, { unique: true });
+examSchema.index({ institutionId: 1, startsAt: 1 });
+
 export const User = mongoose.models.User ?? mongoose.model("User", userSchema);
 export const Institution = mongoose.models.Institution ?? mongoose.model("Institution", institutionSchema);
 export const Membership = mongoose.models.Membership ?? mongoose.model("Membership", membershipSchema);
 export const Student = mongoose.models.Student ?? mongoose.model("Student", studentSchema);
 export const Invitation = mongoose.models.Invitation ?? mongoose.model("Invitation", invitationSchema);
+export const Exam = mongoose.models.Exam ?? mongoose.model("Exam", examSchema);
