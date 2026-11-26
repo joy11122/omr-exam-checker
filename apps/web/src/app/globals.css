@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light;
+  --background: #f7f8fc;
+  --foreground: #172033;
+  --muted: #667085;
+  --surface: #ffffff;
+  --border: #e5e8f0;
+  --accent: #3448c5;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.page-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px 20px;
+}
+.hero {
+  width: min(100%, 760px);
+  padding: clamp(28px, 6vw, 64px);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgb(23 32 51 / 7%);
+}
+.eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+h1 {
+  max-width: 620px;
+  margin: 20px 0;
+  font-size: clamp(36px, 7vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -.045em;
+}
+.hero-copy { max-width: 560px; color: var(--muted); font-size: 18px; line-height: 1.7; }
+.status-pill {
+  display: inline-flex;
+  margin-top: 20px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+}
