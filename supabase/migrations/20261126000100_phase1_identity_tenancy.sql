@@ -188,11 +188,17 @@ with check (
 
 create policy "members_update_admins"
 on public.institution_members for update to authenticated
-using (public.has_institution_role(institution_id, array['owner', 'admin']::public.institution_role[]))
+using (
+  public.has_institution_role(institution_id, array['owner']::public.institution_role[])
+  or (
+    role = 'teacher'
+    and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+  )
+)
 with check (
   public.has_institution_role(institution_id, array['owner']::public.institution_role[])
   or (
-    role <> 'owner'
+    role = 'teacher'
     and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
   )
 );
