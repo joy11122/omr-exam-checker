@@ -70,15 +70,23 @@ async def validate_scan_image(
             image_format = source.format
             if image_format not in ALLOWED_FORMATS:
                 raise HTTPException(status_code=415, detail="Unsupported image format")
+            expected_format = {
+                "image/jpeg": "JPEG",
+                "image/png": "PNG",
+                "image/webp": "WEBP",
+            }[declared_type]
+            if image_format != expected_format:
+                raise HTTPException(status_code=415, detail="Image content does not match its declared type")
             if getattr(source, "is_animated", False):
                 raise HTTPException(status_code=415, detail="Animated images are not supported")
+            width, height = source.size
+            if width * height > MAX_IMAGE_PIXELS:
+                raise HTTPException(status_code=413, detail="Image dimensions exceed the 20 megapixel limit")
             source.verify()
 
         with Image.open(BytesIO(contents)) as source:
             image = ImageOps.exif_transpose(source).convert("RGB")
             width, height = image.size
-            if width * height > MAX_IMAGE_PIXELS:
-                raise HTTPException(status_code=413, detail="Image dimensions exceed the 20 megapixel limit")
             if width < MIN_IMAGE_WIDTH or height < MIN_IMAGE_HEIGHT:
                 raise HTTPException(
                     status_code=422,
