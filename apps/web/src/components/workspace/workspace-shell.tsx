@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BookOpenCheck, ChevronDown, ClipboardList, FileSearch, GraduationCap,
-  LayoutDashboard, Menu, Plus, Settings2, ShieldCheck, Users, X,
+  LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const navigation = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -16,23 +17,24 @@ const navigation = [
   { label: "Students", href: "/students", icon: Users },
 ];
 
-export function WorkspaceShell({
-  children,
-  email,
-}: {
-  children: React.ReactNode;
-  email: string;
-}) {
+export function WorkspaceShell({ children, email }: { children: React.ReactNode; email: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.assign("/login");
+  }
 
   return (
     <div className="workspace-shell">
       {mobileOpen ? <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /> : null}
       <aside className={`workspace-sidebar ${mobileOpen ? "is-open" : ""}`}>
         <Link href="/dashboard" className="sidebar-brand" onClick={() => setMobileOpen(false)}>
-          <span className="brand-mark"><GraduationCap size={21} /></span>
-          <span>OMR Checker</span>
+          <span className="brand-mark"><GraduationCap size={21} /></span><span>OMR Checker</span>
         </Link>
         <button className="new-workspace-button" onClick={() => { window.location.href = "/dashboard#new-institution"; }}>
           <Plus size={17} /> New institution
@@ -41,11 +43,9 @@ export function WorkspaceShell({
         <nav className="sidebar-nav" aria-label="Main navigation">
           {navigation.map(({ label, href, icon: Icon }) => {
             const active = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`sidebar-link ${active ? "active" : ""}`}>
-                <Icon size={18} strokeWidth={1.8} /><span>{label}</span>
-              </Link>
-            );
+            return <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`sidebar-link ${active ? "active" : ""}`}>
+              <Icon size={18} strokeWidth={1.8} /><span>{label}</span>
+            </Link>;
           })}
         </nav>
         <div className="sidebar-spacer" />
@@ -55,6 +55,9 @@ export function WorkspaceShell({
           <span className="account-copy"><strong>{email.split("@")[0]}</strong><small>{email}</small></span>
           <ChevronDown size={16} />
         </div>
+        <button className="sidebar-signout" onClick={handleSignOut} disabled={signingOut}>
+          <LogOut size={15} /> {signingOut ? "Signing out…" : "Sign out"}
+        </button>
         <div className="sidebar-security"><ShieldCheck size={15} /> Secure institution workspace</div>
       </aside>
       <main className="workspace-main">
