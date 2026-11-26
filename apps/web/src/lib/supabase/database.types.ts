@@ -9,6 +9,7 @@ export type Json =
 export type InstitutionRole = "owner" | "admin" | "teacher" | "examiner";
 
 export type Database = {
+  __InternalSupabase: { PostgrestVersion: "12" };
   public: {
     Tables: {
       profiles: {
