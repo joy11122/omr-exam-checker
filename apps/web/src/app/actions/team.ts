@@ -90,6 +90,10 @@ export async function acceptTeamInvitation(formData: FormData) {
   if (!session?.user?.id || !session.user.email || !mongoose.isValidObjectId(session.user.id)) redirect("/login");
   await connectToDatabase();
   const tokenHash = createHash("sha256").update(token).digest("hex");
+  const user = await User.findById(session.user.id).select("email emailVerified").lean();
+  if (!user?.emailVerified || user.email?.toLowerCase() !== session.user.email.toLowerCase()) {
+    redirect("/login?error=email_not_verified");
+  }
   const mongoSession = await mongoose.startSession();
   let institutionId = "";
   try {

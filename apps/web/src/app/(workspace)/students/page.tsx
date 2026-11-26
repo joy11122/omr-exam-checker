@@ -13,7 +13,7 @@ const errors: Record<string,string> = {
   student_code_exists: "That student ID already exists in this institution.", student_create_failed: "Could not add the student.",
   student_update_failed: "Could not update the student.", student_delete_failed: "Could not delete the student.",
   student_not_found: "Student record was not found.", invalid_csv: "CSV format is invalid. Required headers: studentCode, fullName. Maximum 500 rows.",
-  some_codes_exist: "Some student IDs already exist. Remove duplicates and retry.", import_failed: "Import failed. Check the CSV and try again.",
+  some_codes_exist: "Some student IDs already exist. Remove duplicates and retry.", duplicate_codes_in_csv: "The CSV contains duplicate student IDs. Fix the file and import again.", import_failed: "Import failed. Check the CSV and try again.",
 };
 export default async function StudentsPage({ searchParams }: Props) {
   const params = await searchParams;

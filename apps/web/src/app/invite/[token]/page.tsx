@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createHash } from "node:crypto";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
-import { Invitation, Institution } from "@/models";
+import { Invitation, Institution, User } from "@/models";
 import { acceptTeamInvitation } from "@/app/actions/team";
 
 type Props={params:Promise<{token:string}>};

@@ -108,11 +108,23 @@ export async function importStudents(formData: FormData) {
       phone: row.phone,
     }));
     if (!records.length || records.some((record) => !record.success)) redirect("/students?error=invalid_csv");
-    await connectToDatabase();
-    await Student.insertMany(records.map((record) => {
+    const validRecords = records.map((record) => {
       if (!record.success) throw new Error("Invalid student row");
       return { ...record.data, institutionId: new mongoose.Types.ObjectId(parsed.data.institutionId) };
-    }), { ordered: false });
+    });
+    const codes = validRecords.map((record) => record.studentCode.toUpperCase());
+    if (new Set(codes).size !== codes.length) redirect("/students?error=duplicate_codes_in_csv");
+    await connectToDatabase();
+    const existing = await Student.exists({ institutionId: new mongoose.Types.ObjectId(parsed.data.institutionId), studentCode: { $in: codes } });
+    if (existing) redirect("/students?error=some_codes_exist");
+    const mongoSession = await mongoose.startSession();
+    try {
+      await mongoSession.withTransaction(async () => {
+        await Student.insertMany(validRecords, { ordered: true, session: mongoSession });
+      });
+    } finally {
+      await mongoSession.endSession();
+    }
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/students?error=forbidden");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
