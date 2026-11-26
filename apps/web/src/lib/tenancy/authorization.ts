@@ -13,7 +13,7 @@ export async function requireInstitutionRole(institutionId: string, minimumRole:
   const membership = await Membership.findOne({
     institutionId: new mongoose.Types.ObjectId(institutionId),
     userId: new mongoose.Types.ObjectId(session.user.id),
-  }).select("role").lean();
-  if (!membership || roleRank[membership.role as InstitutionRole] < roleRank[minimumRole]) throw new Error("FORBIDDEN");
-  return { userId: session.user.id, role: membership.role as InstitutionRole };
+  }).select("role").lean().exec() as { role: InstitutionRole } | null;
+  if (!membership || roleRank[membership.role] < roleRank[minimumRole]) throw new Error("FORBIDDEN");
+  return { userId: session.user.id, role: membership.role };
 }

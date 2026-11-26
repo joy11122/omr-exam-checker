@@ -1,11 +1,12 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ArrowRight, LoaderCircle, LockKeyhole } from "lucide-react";
 
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +16,8 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     event.preventDefault(); setLoading(true); setError("");
     const result = await signIn("credentials", { email, password, redirect: false, redirectTo: "/dashboard" });
     if (result?.error) { setError("Email or password is incorrect."); setLoading(false); return; }
-    window.location.assign("/dashboard");
+    router.push("/dashboard");
+    router.refresh();
   }
   async function googleSignIn() { setLoading(true); await signIn("google", { redirectTo: "/dashboard" }); }
   return <div className="auth-form-wrap">

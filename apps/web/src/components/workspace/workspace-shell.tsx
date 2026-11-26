@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, type ReactNode } from "react";
 import { BookOpenCheck, ChevronDown, ClipboardList, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users } from "lucide-react";
@@ -15,6 +15,7 @@ const navigation = [
 
 export function WorkspaceShell({ children, email }: { children: ReactNode; email: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   async function handleSignOut() { setSigningOut(true); await signOut({ callbackUrl: "/login" }); }
@@ -22,7 +23,7 @@ export function WorkspaceShell({ children, email }: { children: ReactNode; email
     {mobileOpen ? <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /> : null}
     <aside className={`workspace-sidebar ${mobileOpen ? "is-open" : ""}`}>
       <Link href="/dashboard" className="sidebar-brand" onClick={() => setMobileOpen(false)}><span className="brand-mark"><GraduationCap size={21} /></span><span>OMR Checker</span></Link>
-      <button className="new-workspace-button" onClick={() => { window.location.href = "/dashboard#new-institution"; }}><Plus size={17} /> New institution</button>
+      <button className="new-workspace-button" onClick={() => router.push("/dashboard#new-institution")}><Plus size={17} /> New institution</button>
       <div className="sidebar-section-label">WORKSPACE</div>
       <nav className="sidebar-nav" aria-label="Main navigation">
         {navigation.map(({ label, href, icon: Icon }) => {

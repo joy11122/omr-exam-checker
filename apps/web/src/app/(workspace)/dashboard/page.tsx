@@ -21,7 +21,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const institutions = memberships.length
     ? await Institution.find({ _id: { $in: memberships.map((item) => item.institutionId) } }).sort({ createdAt: -1 }).lean()
     : [];
-  const roles = new Map(memberships.map((item) => [item.institutionId.toString(), item.role]));
+  const roles = new Map(memberships.map((item) => [String(item.institutionId), item.role]));
   return <div className="dashboard-page">
     <div className="page-topline"><span className="eyebrow">INSTITUTION WORKSPACE</span><span className="secure-chip"><CheckCircle2 size={14} /> Secure session</span></div>
     <section className="dashboard-intro"><p className="muted-copy">Your examination operations, in one place.</p><h1>Good to have you here.</h1><p className="intro-description">Create your institution workspace to start organizing exams, answer keys, OMR scans, and student results.</p></section>
@@ -34,9 +34,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     </section>
     <section className="content-section" id="new-institution">
       <div className="section-heading"><div><h2>Your institutions</h2><p>Each institution has its own isolated workspace and team.</p></div><span className="count-pill">{institutions.length}</span></div>
-      {institutions.length ? <div className="institution-list">{institutions.map((institution) => <article className="institution-row" key={institution._id.toString()}>
+      {institutions.length ? <div className="institution-list">{institutions.map((institution) => <article className="institution-row" key={String(institution._id)}>
         <span className="institution-icon"><Building2 size={20} /></span><div className="institution-details"><strong>{institution.name}</strong><span>omrchecker.app/{institution.slug}</span></div>
-        <span className="role-pill">{roles.get(institution._id.toString()) ?? "Member"}</span><ArrowUpRight size={18} className="muted-icon" />
+        <span className="role-pill">{roles.get(String(institution._id)) ?? "Member"}</span><ArrowUpRight size={18} className="muted-icon" />
       </article>)}</div> : <div className="empty-state"><span className="empty-icon"><Building2 size={23} /></span><strong>No institution workspace yet</strong><p>Create your first workspace to begin setting up exams.</p></div>}
     </section>
     <section className="content-section create-card">
