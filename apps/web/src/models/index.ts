@@ -80,6 +80,13 @@ const examSchema = new Schema({
   durationMinutes: { type: Number, required: true, min: 5, max: 600 },
   status: { type: String, enum: ["draft", "scheduled", "completed"], default: "draft", index: true },
   subjects: { type: [examSubjectSchema], required: true, validate: [(value: unknown[]) => value.length > 0 && value.length <= 20, "An exam must have 1–20 subjects"] },
+  sheetSettings: {
+    rollDigits: { type: Number, min: 4, max: 12, default: 6 },
+    questionsPerPage: { type: Number, min: 20, max: 80, default: 40 },
+    includeStudentName: { type: Boolean, default: true },
+    includeClass: { type: Boolean, default: true },
+    instructions: { type: String, trim: true, maxlength: 300, default: "Use a dark blue or black ballpoint pen. Fill bubbles completely. Do not fold or mark this sheet." },
+  },
 }, { timestamps: true, collection: "exams" });
 examSchema.index({ institutionId: 1, examCode: 1 }, { unique: true });
 examSchema.index({ institutionId: 1, startsAt: 1 });
