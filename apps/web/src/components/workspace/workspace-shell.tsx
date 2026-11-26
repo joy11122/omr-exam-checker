@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, type ReactNode } from "react";
-import { BookOpenCheck, ChevronDown, ClipboardList, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users } from "lucide-react";
+import { BookOpenCheck, ChevronDown, ClipboardList, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users, UserRoundCog } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const navigation = [
   { label: "OMR scans", href: "/scans", icon: FileSearch },
   { label: "Results", href: "/results", icon: BookOpenCheck },
   { label: "Students", href: "/students", icon: Users },
+  { label: "Team", href: "/team", icon: UserRoundCog },
 ];
 
 export function WorkspaceShell({ children, email }: { children: ReactNode; email: string }) {
@@ -32,7 +33,7 @@ export function WorkspaceShell({ children, email }: { children: ReactNode; email
         })}
       </nav>
       <div className="sidebar-spacer" />
-      <Link href="/settings" className="sidebar-link"><Settings2 size={18} /><span>Settings</span></Link>
+      <Link href="/settings" className={`sidebar-link ${pathname.startsWith("/settings") ? "active" : ""}`}><Settings2 size={18} /><span>Settings</span></Link>
       <div className="sidebar-account"><span className="avatar-circle">{email.slice(0, 1).toUpperCase()}</span><span className="account-copy"><strong>{email.split("@")[0]}</strong><small>{email}</small></span><ChevronDown size={16} /></div>
       <button className="sidebar-signout" onClick={handleSignOut} disabled={signingOut}><LogOut size={15} /> {signingOut ? "Signing out…" : "Sign out"}</button>
       <div className="sidebar-security"><ShieldCheck size={15} /> Secure institution workspace</div>
