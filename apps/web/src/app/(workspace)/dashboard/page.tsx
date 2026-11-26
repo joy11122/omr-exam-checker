@@ -46,7 +46,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <article className="institution-row" key={institution.id}>
                 <span className="institution-icon"><Building2 size={20} /></span>
                 <div className="institution-details"><strong>{institution.name}</strong><span>omrchecker.app/{institution.slug}</span></div>
-                <span className="role-pill">Member</span>
+                <span className="role-pill">Workspace</span>
                 <ArrowUpRight size={18} className="muted-icon" />
               </article>
             ))}
