@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from fastapi.testclient import TestClient
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from app.main import app
 
@@ -15,7 +15,17 @@ def make_image(
     image_format: str = "PNG",
 ) -> bytes:
     buffer = BytesIO()
-    Image.new("RGB", size, color).save(buffer, format=image_format)
+    image = Image.new("RGB", size, color)
+    if color == (255, 255, 255):
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((30, 30, 90, 90), fill=(0, 0, 0))
+        draw.rectangle((size[0] - 90, 30, size[0] - 30, 90), fill=(0, 0, 0))
+        draw.rectangle((30, size[1] - 90, 90, size[1] - 30), fill=(0, 0, 0))
+        draw.rectangle(
+            (size[0] - 90, size[1] - 90, size[0] - 30, size[1] - 30),
+            fill=(0, 0, 0),
+        )
+    image.save(buffer, format=image_format)
     return buffer.getvalue()
 
 
@@ -66,8 +76,8 @@ def test_scan_intake_accepts_valid_portrait_image(monkeypatch) -> None:
     assert body["stage"] == "intake_validated"
     assert body["image"] == {"format": "PNG", "width": 1200, "height": 1600}
     assert body["quality"]["portrait"] is True
-    assert body["quality"]["contrast"] is False
-    assert body["quality"]["status"] == "manual_review"
+    assert body["quality"]["contrast"] is True
+    assert body["quality"]["status"] == "ready_for_calibration"
     assert len(body["sha256"]) == 64
 
 
