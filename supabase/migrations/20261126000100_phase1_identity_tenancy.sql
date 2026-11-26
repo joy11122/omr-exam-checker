@@ -144,6 +144,8 @@ end;
 $$;
 
 revoke all on function public.create_institution(text, text) from public;
+revoke all on function public.is_active_member(uuid) from public;
+revoke all on function public.has_institution_role(uuid, public.institution_role[]) from public;
 grant execute on function public.create_institution(text, text) to authenticated;
 grant execute on function public.is_active_member(uuid) to authenticated;
 grant execute on function public.has_institution_role(uuid, public.institution_role[]) to authenticated;
@@ -176,18 +178,36 @@ using (public.is_active_member(institution_id));
 
 create policy "members_insert_admins"
 on public.institution_members for insert to authenticated
-with check (public.has_institution_role(institution_id, array['owner', 'admin']::public.institution_role[]));
+with check (
+  public.has_institution_role(institution_id, array['owner']::public.institution_role[])
+  or (
+    role = 'teacher'
+    and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+  )
+);
 
 create policy "members_update_admins"
 on public.institution_members for update to authenticated
 using (public.has_institution_role(institution_id, array['owner', 'admin']::public.institution_role[]))
-with check (public.has_institution_role(institution_id, array['owner', 'admin']::public.institution_role[]));
+with check (
+  public.has_institution_role(institution_id, array['owner']::public.institution_role[])
+  or (
+    role <> 'owner'
+    and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+  )
+);
 
 create policy "members_delete_admins"
 on public.institution_members for delete to authenticated
 using (
   user_id <> auth.uid()
-  and public.has_institution_role(institution_id, array['owner', 'admin']::public.institution_role[])
+  and (
+    public.has_institution_role(institution_id, array['owner']::public.institution_role[])
+    or (
+      role = 'teacher'
+      and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+    )
+  )
 );
 
 -- Authenticated users can only access their own membership records or records
