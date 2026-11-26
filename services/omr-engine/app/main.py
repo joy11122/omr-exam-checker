@@ -8,9 +8,11 @@ from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel
 
+from app.registration import detect_registration_marks
+
 app = FastAPI(
     title="OMR Engine",
-    version="0.2.0",
+    version="0.3.0",
     docs_url="/docs",
     redoc_url=None,
 )
@@ -20,6 +22,11 @@ MAX_IMAGE_PIXELS = 20_000_000
 MIN_IMAGE_WIDTH = 800
 MIN_IMAGE_HEIGHT = 1000
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg": "JPEG",
+    "image/png": "PNG",
+    "image/webp": "WEBP",
+}
 
 
 class ScanIntakeResponse(BaseModel):
@@ -41,6 +48,56 @@ async def require_service_key(
         raise HTTPException(status_code=401, detail="Invalid service credentials")
 
 
+def decode_image(contents: bytes, declared_type: str) -> Image.Image:
+    expected_format = ALLOWED_CONTENT_TYPES.get(declared_type)
+    if not expected_format:
+        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, or WebP image")
+    try:
+        with Image.open(BytesIO(contents)) as source:
+            image_format = source.format
+            if image_format not in ALLOWED_FORMATS or image_format != expected_format:
+                raise HTTPException(
+                    status_code=415,
+                    detail="Image content does not match its declared type",
+                )
+            if getattr(source, "is_animated", False):
+                raise HTTPException(status_code=415, detail="Animated images are not supported")
+            width, height = source.size
+            if width * height > MAX_IMAGE_PIXELS:
+                raise HTTPException(
+                    status_code=413,
+                    detail="Image dimensions exceed the 20 megapixel limit",
+                )
+            source.verify()
+
+        with Image.open(BytesIO(contents)) as source:
+            image = ImageOps.exif_transpose(source).convert("RGB")
+            width, height = image.size
+            if width < MIN_IMAGE_WIDTH or height < MIN_IMAGE_HEIGHT:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Image must be at least {MIN_IMAGE_WIDTH} × {MIN_IMAGE_HEIGHT} pixels",
+                )
+            return image
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise HTTPException(
+            status_code=422,
+            detail="The uploaded file is not a valid readable image",
+        ) from None
+
+
+async def read_upload(file: UploadFile) -> tuple[bytes, Image.Image]:
+    declared_type = (file.content_type or "").lower()
+    if declared_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, or WebP image")
+    contents = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Image exceeds the 10 MB upload limit")
+    if not contents:
+        raise HTTPException(status_code=400, detail="The uploaded image is empty")
+    return contents, decode_image(contents, declared_type)
+
+
 @app.get("/health", tags=["operations"])
 async def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "omr-engine"}
@@ -55,61 +112,36 @@ async def health_check() -> dict[str, str]:
 async def validate_scan_image(
     file: Annotated[UploadFile, File(description="A photographed or scanned OMR answer sheet")],
 ) -> ScanIntakeResponse:
-    declared_type = (file.content_type or "").lower()
-    if declared_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, or WebP image")
-
-    contents = await file.read(MAX_UPLOAD_BYTES + 1)
-    if len(contents) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="Image exceeds the 10 MB upload limit")
-    if not contents:
-        raise HTTPException(status_code=400, detail="The uploaded image is empty")
-
-    try:
-        with Image.open(BytesIO(contents)) as source:
-            image_format = source.format
-            if image_format not in ALLOWED_FORMATS:
-                raise HTTPException(status_code=415, detail="Unsupported image format")
-            expected_format = {
-                "image/jpeg": "JPEG",
-                "image/png": "PNG",
-                "image/webp": "WEBP",
-            }[declared_type]
-            if image_format != expected_format:
-                raise HTTPException(status_code=415, detail="Image content does not match its declared type")
-            if getattr(source, "is_animated", False):
-                raise HTTPException(status_code=415, detail="Animated images are not supported")
-            width, height = source.size
-            if width * height > MAX_IMAGE_PIXELS:
-                raise HTTPException(status_code=413, detail="Image dimensions exceed the 20 megapixel limit")
-            source.verify()
-
-        with Image.open(BytesIO(contents)) as source:
-            image = ImageOps.exif_transpose(source).convert("RGB")
-            width, height = image.size
-            if width < MIN_IMAGE_WIDTH or height < MIN_IMAGE_HEIGHT:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Image must be at least {MIN_IMAGE_WIDTH} × {MIN_IMAGE_HEIGHT} pixels",
-                )
-            grayscale = image.convert("L")
-            extrema = grayscale.getextrema()
-            contrast = extrema[1] - extrema[0]
-            is_portrait = height > width
-            has_usable_contrast = contrast >= 80
-
-    except (UnidentifiedImageError, OSError, ValueError):
-        raise HTTPException(status_code=422, detail="The uploaded file is not a valid readable image") from None
-
-    quality_status = "ready_for_calibration" if is_portrait and has_usable_contrast else "manual_review"
+    contents, image = await read_upload(file)
+    width, height = image.size
+    extrema = image.convert("L").getextrema()
+    contrast = extrema[1] - extrema[0]
+    is_portrait = height > width
+    has_usable_contrast = contrast >= 80
+    quality_status = (
+        "ready_for_calibration" if is_portrait and has_usable_contrast else "manual_review"
+    )
     return ScanIntakeResponse(
         status="accepted" if quality_status == "ready_for_calibration" else "review_required",
         stage="intake_validated",
         sha256=hashlib.sha256(contents).hexdigest(),
-        image={"format": str(image_format), "width": width, "height": height},
+        image={"format": Image.open(BytesIO(contents)).format or "unknown",
+               "width": width, "height": height},
         quality={
             "portrait": is_portrait,
             "contrast": has_usable_contrast,
             "status": quality_status,
         },
     )
+
+
+@app.post(
+    "/v1/scans/registration-marks",
+    tags=["scans"],
+    dependencies=[Depends(require_service_key)],
+)
+async def locate_registration_marks(
+    file: Annotated[UploadFile, File(description="A validated A4 OMR answer sheet image")],
+) -> dict:
+    _, image = await read_upload(file)
+    return detect_registration_marks(image)

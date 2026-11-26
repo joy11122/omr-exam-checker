@@ -13,10 +13,11 @@ def make_image(
     size: tuple[int, int] = (1200, 1600),
     color: tuple[int, int, int] = (255, 255, 255),
     image_format: str = "PNG",
+    marks: bool = True,
 ) -> bytes:
     buffer = BytesIO()
     image = Image.new("RGB", size, color)
-    if color == (255, 255, 255):
+    if marks:
         draw = ImageDraw.Draw(image)
         draw.rectangle((30, 30, 90, 90), fill=(0, 0, 0))
         draw.rectangle((size[0] - 90, 30, size[0] - 30, 90), fill=(0, 0, 0))
@@ -31,12 +32,13 @@ def make_image(
 
 def upload_image(
     content: bytes,
+    endpoint: str = "/v1/scans/intake",
     content_type: str = "image/png",
     authorization: str | None = f"Bearer {API_KEY}",
 ):
     headers = {"Authorization": authorization} if authorization else {}
     return client.post(
-        "/v1/scans/intake",
+        endpoint,
         headers=headers,
         files={"file": ("answer-sheet.png", content, content_type)},
     )
@@ -129,3 +131,54 @@ def test_scan_intake_rejects_oversized_upload(monkeypatch) -> None:
     response = upload_image(b"x" * (10 * 1024 * 1024 + 1))
 
     assert response.status_code == 413
+
+
+def test_registration_marks_detect_four_corners(monkeypatch) -> None:
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+
+    response = upload_image(
+        make_image(),
+        endpoint="/v1/scans/registration-marks",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "detected"
+    assert body["stage"] == "registration_marks_detected"
+    assert body["detected_count"] == 4
+    assert set(body["marks"]) == {
+        "top_left",
+        "top_right",
+        "bottom_left",
+        "bottom_right",
+    }
+    assert body["minimum_confidence"] > 0.8
+    assert body["next_step"] == "perspective_correction"
+
+
+def test_registration_marks_require_review_when_corners_are_missing(monkeypatch) -> None:
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+
+    response = upload_image(
+        make_image(marks=False),
+        endpoint="/v1/scans/registration-marks",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "review_required"
+    assert body["detected_count"] == 0
+    assert body["minimum_confidence"] is None
+    assert body["next_step"] == "manual_alignment"
+
+
+def test_registration_marks_endpoint_requires_service_auth(monkeypatch) -> None:
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+
+    response = upload_image(
+        make_image(),
+        endpoint="/v1/scans/registration-marks",
+        authorization="Bearer wrong",
+    )
+
+    assert response.status_code == 401
