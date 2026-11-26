@@ -30,13 +30,13 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: { [_ in never]: never };
     Functions: {
       create_institution: { Args: { p_name: string; p_slug: string }; Returns: string };
       is_active_member: { Args: { p_institution_id: string }; Returns: boolean };
       has_institution_role: { Args: { p_institution_id: string; p_allowed_roles: InstitutionRole[] }; Returns: boolean };
     };
     Enums: { institution_role: InstitutionRole };
-    CompositeTypes: Record<string, never>;
+    CompositeTypes: { [_ in never]: never };
   };
 };
