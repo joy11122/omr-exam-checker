@@ -193,7 +193,7 @@ on public.institution_members for insert to authenticated
 with check (
   public.has_institution_role(institution_id, array['owner']::public.institution_role[])
   or (
-    role = 'teacher'
+    role in ('teacher', 'examiner')
     and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
   )
 );
@@ -205,7 +205,7 @@ using (
   and (
     public.has_institution_role(institution_id, array['owner']::public.institution_role[])
     or (
-      role = 'teacher'
+      role in ('teacher', 'examiner')
       and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
     )
   )
@@ -213,7 +213,7 @@ using (
 with check (
   public.has_institution_role(institution_id, array['owner']::public.institution_role[])
   or (
-    role = 'teacher'
+    role in ('teacher', 'examiner')
     and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
   )
 );
@@ -225,7 +225,7 @@ using (
   and (
     public.has_institution_role(institution_id, array['owner']::public.institution_role[])
     or (
-      role = 'teacher'
+      role in ('teacher', 'examiner')
       and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
     )
   )
