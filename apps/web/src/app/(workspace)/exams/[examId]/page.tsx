@@ -1,6 +1,6 @@
 import Link from "next/link";
 import mongoose from "mongoose";
-import { AlertCircle, ArrowLeft, CheckCircle2, KeyRound, ListChecks } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, FileText, KeyRound, ListChecks } from "lucide-react";
 import { auth } from "@/auth";
 import { saveAnswerKey } from "@/app/actions/exams";
 import { connectToDatabase } from "@/lib/mongodb/client";
@@ -27,6 +27,7 @@ export default async function ExamDetailPage({ params, searchParams }: Props) {
     <section className="management-intro"><p className="muted-copy">{exam.examCode} · {exam.status}</p><h1>{exam.title}</h1><p>{exam.description || "Configure subject answer keys and review the exam structure."}</p></section>
     {query.saved ? <div className="form-alert success"><CheckCircle2 size={16}/> Answer key saved successfully.</div> : null}
     {errorMessage ? <div className="form-alert error"><AlertCircle size={16}/>{errorMessage}</div> : null}
+    <div className="omr-detail-actions"><Link className="button button-secondary" href={"/exams/" + examId + "/sheets?institutionId=" + current.institutionId}><FileText size={16}/> Design &amp; print OMR sheets</Link></div>
     <section className="management-panel">
       <div className="management-panel-heading"><div><h2>Exam structure</h2><p>{exam.subjects.length} subjects · {questionTotal} questions · {exam.durationMinutes} minutes</p></div><ListChecks size={20}/></div>
       <div className="student-list">{exam.subjects.map((subject: { _id: mongoose.Types.ObjectId; name: string; questionCount: number; marksPerQuestion: number; negativeMarksPerQuestion: number; answerKey: { questionNumber: number; option: string }[] }) => {
