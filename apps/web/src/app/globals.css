@@ -159,3 +159,76 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .feature-placeholder h1 { margin: 0; font-size: clamp(30px, 4vw, 42px); letter-spacing: -.05em; }
 .feature-placeholder > p:not(.eyebrow) { max-width: 490px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .coming-soon-pill { margin-top: 7px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; color: #777c86; font-size: 10px; }
+
+
+/* Phase 2: institution, student and team management */
+.management-page { max-width: 900px; margin: 0 auto; }
+.management-intro { margin: 42px 0 25px; }
+.management-intro h1 { margin: 8px 0; font-size: clamp(30px,4vw,40px); letter-spacing: -.05em; }
+.management-intro > p:last-child { max-width: 600px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.institution-switcher { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 19px; }
+.switcher-link { padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: white; color: #737780; font-size: 10px; }
+.switcher-link.active { border-color: #c9cbd1; background: #eceef1; color: var(--ink); font-weight: 700; }
+.management-panel { min-width: 0; margin-top: 18px; padding: 19px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+.management-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.management-panel-heading h2 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+.management-panel-heading p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.management-form { display: grid; gap: 13px; }
+.management-form label { display: grid; gap: 6px; color: #50545d; font-size: 11px; font-weight: 650; }
+.management-form input, .management-form select, .management-form textarea, .student-edit-form input, .role-form select { width: 100%; min-width: 0; min-height: 40px; padding: 9px 11px; border: 1px solid #dfe2e8; border-radius: 9px; background: white; color: var(--ink); font: inherit; font-size: 12px; }
+.management-form textarea { resize: vertical; line-height: 1.5; }
+.management-form input:disabled, .management-form textarea:disabled { background: #f7f8fa; color: #777c86; }
+.management-form .button { justify-self: start; }
+.form-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.management-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 15px; margin-top: 17px; }
+.management-grid .management-panel { margin-top: 0; height: 100%; }
+.search-form { display: flex; min-height: 43px; align-items: center; gap: 9px; margin-bottom: 13px; padding: 4px 5px 4px 11px; border: 1px solid var(--line); border-radius: 10px; color: #858994; }
+.search-form input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--ink); font-size: 12px; }
+.search-form .button { min-height: 33px; padding: 0 11px; font-size: 10px; }
+.student-list, .team-list, .pending-list { display: grid; }
+.student-row, .team-row { display: flex; min-width: 0; align-items: center; gap: 11px; padding: 12px 0; border-top: 1px solid var(--line); }
+.student-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #f0f1f3; color: #626772; }
+.student-edit-form { display: grid; min-width: 0; flex: 1; gap: 7px; }
+.student-edit-form > input { border: 0; padding: 2px 0; min-height: 27px; font-size: 12px; font-weight: 700; }
+.student-meta-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.student-meta-fields input { min-height: 31px; padding: 5px 7px; font-size: 10px; }
+.student-edit-form .button { min-height: 30px; justify-self: start; padding: 0 10px; font-size: 10px; }
+.icon-danger-button { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid #f0d8d6; border-radius: 8px; background: #fff8f7; color: #b42318; font-size: 19px; cursor: pointer; }
+.icon-danger-button:hover { background: #ffefed; }
+.helper-copy { color: #858994; font-size: 10px; line-height: 1.6; }
+.team-person { display: grid; min-width: 0; flex: 1; gap: 4px; }
+.team-person strong, .pending-row strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.team-person small, .pending-row small { color: #858994; font-size: 10px; }
+.role-form { display: flex; align-items: center; gap: 6px; }
+.role-form select { min-height: 34px; padding: 5px 7px; font-size: 10px; }
+.role-form .button { min-height: 34px; padding: 0 9px; font-size: 10px; }
+.pending-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.pending-row > div { display: grid; min-width: 0; gap: 4px; }
+.pending-pill { padding: 5px 8px; border-radius: 999px; background: #f2f3f5; color: #737780; font-size: 9px; }
+.invite-link-panel { display: flex; align-items: flex-start; gap: 12px; margin: 14px 0; padding: 14px; border: 1px solid #d8e9df; border-radius: 11px; background: #f3faf6; color: #245c40; }
+.invite-link-panel > div { min-width: 0; flex: 1; }
+.invite-link-panel strong { font-size: 12px; }
+.invite-link-panel p { margin: 5px 0 9px; font-size: 10px; line-height: 1.5; }
+.invite-link-panel small { display: block; margin-top: 6px; font-size: 9px; }
+.invite-copy-row { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.invite-copy-row code { overflow: hidden; flex: 1; padding: 8px; border: 1px solid #d8e9df; border-radius: 7px; background: white; color: #345c47; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.invite-copy-row .button { min-height: 34px; padding: 0 9px; font-size: 10px; }
+.invite-page { display: grid; width: min(100% - 36px, 440px); min-height: 70vh; align-content: center; justify-items: start; gap: 14px; margin: auto; }
+.invite-page h1 { margin: 0; font-size: 34px; letter-spacing: -.04em; }
+.invite-page p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.invite-page form { margin-top: 10px; }
+.settings-panel { max-width: 660px; }
+@media (max-width: 760px) {
+ .management-intro { margin: 30px 0 20px; }
+ .management-grid { grid-template-columns: 1fr; }
+ .management-panel { padding: 15px; }
+ .student-row { gap: 8px; }
+ .student-meta-fields { grid-template-columns: 1fr 1fr; }
+ .student-meta-fields input:last-child { display: none; }
+ .team-row { flex-wrap: wrap; }
+ .team-person { flex-basis: calc(100% - 60px); }
+ .role-form { margin-left: 41px; }
+ .form-two-columns { grid-template-columns: 1fr; }
+ .invite-copy-row { align-items: stretch; flex-direction: column; }
+ .invite-copy-row .button { align-self: flex-start; }
+}
