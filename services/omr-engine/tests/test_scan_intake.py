@@ -65,11 +65,9 @@ def test_scan_intake_accepts_valid_portrait_image(monkeypatch) -> None:
     assert body["status"] == "accepted"
     assert body["stage"] == "intake_validated"
     assert body["image"] == {"format": "PNG", "width": 1200, "height": 1600}
-    assert body["quality"] == {
-        "portrait": True,
-        "contrast": False,
-        "status": "manual_review",
-    } or body["quality"]["status"] == "ready_for_calibration"
+    assert body["quality"]["portrait"] is True
+    assert body["quality"]["contrast"] is False
+    assert body["quality"]["status"] == "manual_review"
     assert len(body["sha256"]) == 64
 
 
