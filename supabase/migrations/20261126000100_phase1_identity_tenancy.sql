@@ -150,6 +150,15 @@ grant execute on function public.create_institution(text, text) to authenticated
 grant execute on function public.is_active_member(uuid) to authenticated;
 grant execute on function public.has_institution_role(uuid, public.institution_role[]) to authenticated;
 
+-- Explicit table/column grants complement RLS and prevent clients changing
+-- immutable ownership and identity columns.
+grant select on public.profiles to authenticated;
+grant update (full_name, avatar_url) on public.profiles to authenticated;
+grant select on public.institutions to authenticated;
+grant update (name, slug) on public.institutions to authenticated;
+grant select, insert, delete on public.institution_members to authenticated;
+grant update (role) on public.institution_members to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.institutions enable row level security;
 alter table public.institution_members enable row level security;
@@ -189,10 +198,13 @@ with check (
 create policy "members_update_admins"
 on public.institution_members for update to authenticated
 using (
-  public.has_institution_role(institution_id, array['owner']::public.institution_role[])
-  or (
-    role = 'teacher'
-    and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+  user_id <> auth.uid()
+  and (
+    public.has_institution_role(institution_id, array['owner']::public.institution_role[])
+    or (
+      role = 'teacher'
+      and public.has_institution_role(institution_id, array['admin']::public.institution_role[])
+    )
   )
 )
 with check (
