@@ -7,7 +7,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { Exam } from "@/models";
 
-type Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; saved?: string; error?: string }> };
+type ExamRecord = { _id: mongoose.Types.ObjectId; title: string; examCode: string; status: string; description?: string; durationMinutes: number; subjects: { _id: mongoose.Types.ObjectId; name: string; questionCount: number; marksPerQuestion: number; negativeMarksPerQuestion: number; answerKey: { questionNumber: number; option: string }[] }[] };\ntype Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; saved?: string; error?: string }> };
 export default async function ExamDetailPage({ params, searchParams }: Props) {
   const [{ examId }, query] = await Promise.all([params, searchParams]);
   const session = await auth();
@@ -15,7 +15,7 @@ export default async function ExamDetailPage({ params, searchParams }: Props) {
   const current = await getCurrentInstitution(session.user.id, query.institutionId);
   if (!current) return <section className="management-page"><h1>Exam unavailable</h1><Link href="/dashboard">Return to dashboard</Link></section>;
   await connectToDatabase();
-  const exam = await Exam.findOne({ _id: new mongoose.Types.ObjectId(examId), institutionId: new mongoose.Types.ObjectId(current.institutionId) }).lean();
+  const exam = await Exam.findOne({ _id: new mongoose.Types.ObjectId(examId), institutionId: new mongoose.Types.ObjectId(current.institutionId) }).lean().exec() as unknown as ExamRecord | null;
   if (!exam) return <section className="management-page"><h1>Exam not found</h1><Link href={"/exams?institutionId=" + current.institutionId}>Back to exams</Link></section>;
   const canEdit = ["owner", "admin", "teacher"].includes(String(current.role));
   const questionTotal = exam.subjects.reduce((sum: number, subject: { questionCount: number }) => sum + subject.questionCount, 0);
