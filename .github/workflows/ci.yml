@@ -13,11 +13,15 @@ jobs:
     name: Web lint, types, and production build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install
+      - name: Report dependency audit findings
+        run: |
+          npm audit --json > npm-audit.json || true
+          node -e "const report = require('./npm-audit.json'); for (const [name, item] of Object.entries(report.vulnerabilities || {})) console.log(name + ': ' + item.severity + ', fix=' + JSON.stringify(item.fixAvailable));"
       - run: npm run lint:web
       - run: npm run typecheck:web
       - run: npm run build:web
@@ -29,8 +33,8 @@ jobs:
       run:
         working-directory: services/omr-engine
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: pip
