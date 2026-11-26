@@ -150,8 +150,11 @@ grant execute on function public.create_institution(text, text) to authenticated
 grant execute on function public.is_active_member(uuid) to authenticated;
 grant execute on function public.has_institution_role(uuid, public.institution_role[]) to authenticated;
 
--- Explicit table/column grants complement RLS and prevent clients changing
--- immutable ownership and identity columns.
+-- Explicit grants complement RLS and prevent anonymous access or mutation of
+-- immutable ownership and identity columns, including permissive defaults.
+revoke all on public.profiles from anon, authenticated;
+revoke all on public.institutions from anon, authenticated;
+revoke all on public.institution_members from anon, authenticated;
 grant select on public.profiles to authenticated;
 grant update (full_name, avatar_url) on public.profiles to authenticated;
 grant select on public.institutions to authenticated;
