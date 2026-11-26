@@ -7,7 +7,8 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { Exam } from "@/models";
 
-type ExamRecord = { _id: mongoose.Types.ObjectId; title: string; examCode: string; status: string; description?: string; durationMinutes: number; subjects: { _id: mongoose.Types.ObjectId; name: string; questionCount: number; marksPerQuestion: number; negativeMarksPerQuestion: number; answerKey: { questionNumber: number; option: string }[] }[] };\ntype Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; saved?: string; error?: string }> };
+type ExamRecord = { _id: mongoose.Types.ObjectId; title: string; examCode: string; status: string; description?: string; durationMinutes: number; subjects: { _id: mongoose.Types.ObjectId; name: string; questionCount: number; marksPerQuestion: number; negativeMarksPerQuestion: number; answerKey: { questionNumber: number; option: string }[] }[] };
+type Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; saved?: string; error?: string }> };
 export default async function ExamDetailPage({ params, searchParams }: Props) {
   const [{ examId }, query] = await Promise.all([params, searchParams]);
   const session = await auth();
