@@ -1,6 +1,5 @@
-import { FileSearch } from "lucide-react";
-import { FeaturePlaceholder } from "@/components/workspace/feature-placeholder";
+import { ScanUpload } from "@/components/omr/scan-upload";
 
 export default function ScansPage() {
-  return <FeaturePlaceholder eyebrow="OMR PROCESSING" title="OMR scans" description="Upload answer sheets, monitor scan batches, and review uncertain bubble detections." icon={FileSearch} />;
+  return <ScanUpload />;
 }
