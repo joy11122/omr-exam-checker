@@ -1,6 +1,6 @@
 import Link from "next/link";
 import mongoose from "mongoose";
-import { AlertCircle, ArrowLeft, CheckCircle2, FileText, Printer, Settings2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText, Printer, Settings2 } from "lucide-react";
 import { auth } from "@/auth";
 import { updateOmrTemplate } from "@/app/actions/omr-sheets";
 import { PrintButton } from "@/components/omr/print-button";
@@ -18,7 +18,7 @@ type ExamRecord = {
   sheetSettings?: { rollDigits?: number; questionsPerPage?: number; includeStudentName?: boolean; includeClass?: boolean; instructions?: string };
 };
 type StudentRecord = { _id: mongoose.Types.ObjectId; studentCode: string; fullName: string; className?: string; section?: string; rollNumber?: string };
-type Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; subjectId?: string; studentId?: string; saved?: string }> };
+type Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; subjectId?: string; studentId?: string; saved?: string; error?: string }> };
 
 function Bubble({ label }: { label: string }) {
   return <span className="omr-bubble" aria-label={label}>{label}</span>;
@@ -87,7 +87,7 @@ export default async function OmrSheetsPage({ params, searchParams }: Props) {
     <div className="page-topline no-print"><span className="eyebrow">PRINT PRODUCTION</span><span className="secure-chip"><FileText size={14}/> A4 OMR template</span></div>
     <Link className="back-link no-print" href={"/exams/" + examId + "?institutionId=" + current.institutionId}><ArrowLeft size={15}/> Back to exam</Link>
     <section className="management-intro no-print"><p className="muted-copy">{exam.examCode} · {exam.title}</p><h1>OMR sheet designer</h1><p>Configure the answer-sheet layout, select a subject and candidate, then print a scan-ready A4 sheet.</p></section>
-    {query.saved ? <div className="form-alert success no-print"><CheckCircle2 size={16}/> Sheet template settings saved.</div> : null}
+    {query.saved ? <div className="form-alert success no-print"><CheckCircle2 size={16}/> Sheet template settings saved.</div> : null}\n    {query.error ? <div className="form-alert error no-print">The template could not be saved. Check your permissions and settings, then try again.</div> : null}
     <div className="omr-builder-grid no-print">
       <section className="management-panel">
         <div className="management-panel-heading"><div><h2>Template settings</h2><p>These settings apply to every subject in this exam.</p></div><Settings2 size={19}/></div>
