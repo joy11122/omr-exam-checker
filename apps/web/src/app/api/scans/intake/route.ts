@@ -10,6 +10,11 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(request: Request) {
   try {
+    const declaredLength = Number(request.headers.get("content-length") ?? 0);
+    if (declaredLength > MAX_UPLOAD_BYTES + 1024 * 1024) {
+      return NextResponse.json({ error: "Images must be 10 MB or smaller." }, { status: 413 });
+    }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Sign in to upload an answer sheet." }, { status: 401 });
@@ -21,7 +26,10 @@ export async function POST(request: Request) {
     }
     await requireInstitutionRole(institution.institutionId, "examiner");
 
-    const formData = await request.formData();
+    const formData = await request.formData().catch(() => null);
+    if (!formData) {
+      return NextResponse.json({ error: "The upload request could not be read." }, { status: 400 });
+    }
     const file = formData.get("file");
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Choose an image file to continue." }, { status: 400 });
