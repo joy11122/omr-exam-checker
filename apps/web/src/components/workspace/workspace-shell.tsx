@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BookOpenCheck, ChevronDown, ClipboardList, FileSearch, GraduationCap,
   LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users,
@@ -17,7 +17,7 @@ const navigation = [
   { label: "Students", href: "/students", icon: Users },
 ];
 
-export function WorkspaceShell({ children, email }: { children: React.ReactNode; email: string }) {
+export function WorkspaceShell({ children, email }: { children: ReactNode; email: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
