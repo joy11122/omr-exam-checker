@@ -4,28 +4,28 @@
 
 - Next.js App Router and TypeScript are the web application foundation.
 - Zod validates form, route, and server-action input.
-- Supabase provides authentication, PostgreSQL, Row Level Security, private object storage, and realtime subscriptions where needed.
-- Android is the only native mobile target. Capacitor Android packaging is planned after the responsive web workflow is stable. iOS is out of scope.
-- The product UI uses a ChatGPT-inspired workspace: collapsible left navigation, compact navigation groups, and a focused central work area.
+- MongoDB Atlas is the source of truth, accessed through Mongoose.
+- Auth.js manages sessions and optional Google OAuth; the MongoDB adapter stores OAuth accounts and sessions.
+- Android is the only native mobile target. Capacitor Android packaging is planned after the web workflow is stable. iOS is out of scope.
+- The product UI uses a ChatGPT-inspired workspace: collapsible left navigation and a focused central work area.
 
 ## Runtime boundaries
 
 - Next.js owns authenticated user experience, server actions, tenant-aware application APIs, and administration.
-- Supabase Auth owns identity and session issuance.
-- PostgreSQL is the source of truth for institutions, memberships, exams, students, answer keys, scans, and results.
-- Row Level Security enforces institution-level access for every tenant-owned table.
-- Supabase Storage holds private uploaded scans and generated artifacts. Objects are not public by default.
-- Redis-backed jobs coordinate asynchronous OMR processing.
+- Auth.js owns identity and session issuance.
+- MongoDB stores users, institutions, memberships, exams, students, answer keys, scans, and results.
+- Every tenant-owned operation must enforce membership and role checks on the server; client-side filtering is never an authorization boundary.
+- MongoDB Atlas transactions keep institution creation and owner membership atomic.
 - The Python/OpenCV service performs image preprocessing and mark detection outside web request lifecycles.
 
 ## Identity and tenant model
 
-- One auth user can belong to multiple institutions.
+- One user can belong to multiple institutions.
 - Each institution has independent memberships and role assignments.
 - Roles: owner, admin, teacher, examiner.
-- Tenant membership is derived from the authenticated Supabase user, never from a client-provided institution ID.
-- Institution creation is performed through a transactional SECURITY DEFINER RPC that creates the institution and owner membership together.
-- RLS policies are mandatory for every tenant-owned table. Service-role access is restricted to trusted server/worker contexts.
+- Authenticated identity comes from the Auth.js session, never from a client-provided user ID.
+- Tenant membership is resolved from MongoDB membership collection for each protected operation.
+- Unique indexes enforce institution slug uniqueness and one membership per user/institution pair.
 
 ## OMR correctness
 

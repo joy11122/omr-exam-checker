@@ -6,44 +6,39 @@ A multi-tenant OMR examination management SaaS for schools, colleges, and coachi
 
 - Web application: Next.js App Router + TypeScript
 - Validation: Zod at every untrusted input boundary
-- Backend platform: Supabase Auth, PostgreSQL, Row Level Security, Storage, and Realtime
+- Database: MongoDB Atlas with Mongoose
+- Authentication: Auth.js (email/password and optional Google OAuth), MongoDB adapter
 - OMR processing: separate Python/OpenCV worker
 - Mobile target: Android only, using Capacitor when the web workflow is ready
 - iOS: explicitly out of scope
-- UX: ChatGPT-inspired workspace with a collapsible sidebar and responsive conversation-like work area
-
-## Repository structure
-
-- `apps/web`: Next.js application
-- `services/omr-engine`: Python processing service
-- `supabase/migrations`: version-controlled database schema and RLS policies
-- `docs`: architecture and operational runbooks
+- UX: ChatGPT-inspired workspace with a collapsible sidebar and responsive central work area
 
 ## Local development
 
 1. Install Node.js 20.9 or later.
-2. Copy `apps/web/.env.example` to `apps/web/.env.local`.
-3. Create a Supabase project and set the public project URL and anon/publishable key.
-4. Apply migrations with the Supabase CLI: `supabase db push`.
+2. Create a MongoDB Atlas cluster and database named `omr_exam_checker`.
+3. Copy `apps/web/.env.example` to `apps/web/.env.local`.
+4. Set `MONGODB_URI`, `MONGODB_DB_NAME`, and a strong `AUTH_SECRET`.
 5. Install dependencies from the repository root: `npm install`.
 6. Start the web app: `npm run dev:web`.
 
-The Google provider must be enabled in Supabase Authentication if Google sign-in is desired. Email magic-link sign-in is also supported. Set the allowed redirect URL to the local and deployed `/auth/callback` routes in Supabase Auth settings.
+Google sign-in is enabled when `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` are configured. Set the Google OAuth callback URL to `/api/auth/callback/google` on local and deployed origins.
 
 ## Security principles
 
-- Never expose the Supabase service-role key in browser code.
-- Enforce tenant isolation with PostgreSQL Row Level Security, not client-side filtering.
-- Derive tenant membership from the authenticated Supabase user.
-- Use the `create_institution` RPC to atomically create an institution and its owner membership.
+- MongoDB credentials and OAuth secrets are server-only; never prefix them with `NEXT_PUBLIC_`.
+- Every tenant-owned read/write must verify membership on the server using `requireInstitutionRole`.
+- Never trust a client-provided institution ID without checking the authenticated user's membership.
+- Institution creation and owner membership are written in a MongoDB transaction (Atlas replica-set deployment required).
+- Unique indexes enforce institution slug uniqueness and one membership per user/institution pair.
 - Keep uploaded answer sheets private; use short-lived signed URLs when scan storage is introduced.
 - Treat low-confidence OMR detections as requiring human review.
 
 ## Quality gates
 
-Before merging, run web lint, TypeScript checks, production build, Python lint, and Python tests. Database migrations must also be reviewed for RLS coverage before deployment.
+Before merging, run web lint, TypeScript checks, production build, Python lint, and Python tests.
 
 ## Current status
 
 - Phase 0: repository foundation merged.
-- Phase 1: Supabase authentication, institution onboarding, and tenant isolation in progress.
+- Phase 1: MongoDB-backed authentication, institution onboarding, and tenant authorization migration in progress.

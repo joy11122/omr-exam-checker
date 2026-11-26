@@ -1,80 +1,36 @@
 "use client";
-
 import { useState, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
-import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { ArrowRight, LoaderCircle, LockKeyhole } from "lucide-react";
 
-export function LoginForm() {
+export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const callbackError = searchParams.get("error");
-
-  async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage("");
-    setError("");
-
-    const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
-    });
-
-    if (authError) setError(authError.message);
-    else setMessage("Check your email for a secure sign-in link.");
-
-    setLoading(false);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setLoading(true); setError("");
+    const result = await signIn("credentials", { email, password, redirect: false, redirectTo: "/dashboard" });
+    if (result?.error) { setError("Email or password is incorrect."); setLoading(false); return; }
+    router.push("/dashboard");
+    router.refresh();
   }
-
-  async function signInWithGoogle() {
-    setLoading(true);
-    setError("");
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-      },
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="auth-form-wrap">
-      {callbackError ? <p className="form-alert error">Sign-in could not be completed. Please try again.</p> : null}
-      <button className="button button-secondary button-full" onClick={signInWithGoogle} disabled={loading} type="button">
-        Continue with Google
-        <ArrowRight size={16} />
-      </button>
-      <div className="auth-divider"><span>or continue with email</span></div>
-      <form onSubmit={sendMagicLink} className="stack-form">
-        <label htmlFor="email">Work or institution email</label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@institution.edu"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-        <button className="button button-primary button-full" type="submit" disabled={loading}>
-          {loading ? <LoaderCircle className="spin" size={17} /> : <Mail size={17} />}
-          Send secure sign-in link
-        </button>
-      </form>
-      {message ? <p className="form-alert success" role="status">{message}</p> : null}
-      {error ? <p className="form-alert error" role="alert">{error}</p> : null}
-      <p className="auth-footnote">By continuing, you agree to use this workspace only for authorized educational activities.</p>
-    </div>
-  );
+  async function googleSignIn() { setLoading(true); await signIn("google", { redirectTo: "/dashboard" }); }
+  return <div className="auth-form-wrap">
+    {searchParams.get("registered") ? <p className="form-alert success" role="status">Account created. Sign in with your email and password.</p> : null}
+    {searchParams.get("error") ? <p className="form-alert error" role="alert">We could not complete that request. Please try again.</p> : null}
+    {googleEnabled ? <button className="button button-secondary button-full" onClick={googleSignIn} disabled={loading} type="button">Continue with Google <ArrowRight size={16} /></button> : null}
+    {googleEnabled ? <div className="auth-divider"><span>or continue with email</span></div> : null}
+    <form onSubmit={submit} className="stack-form">
+      <label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" placeholder="you@institution.edu" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} />
+      <label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" placeholder="Your password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} maxLength={72} />
+      <button className="button button-primary button-full" type="submit" disabled={loading}>{loading ? <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />} Sign in securely</button>
+    </form>
+    {error ? <p className="form-alert error" role="alert">{error}</p> : null}
+    <p className="auth-footnote">New to OMR Checker? <Link href="/register">Create an account</Link>.</p>
+  </div>;
 }
