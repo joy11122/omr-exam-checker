@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type IntakeResult = {
@@ -44,7 +44,7 @@ export function ScanUpload() {
     }
   }
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setFile(event.target.files?.[0] ?? null);
     setError("");
     setResult(null);
