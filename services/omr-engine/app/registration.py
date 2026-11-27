@@ -116,3 +116,73 @@ def detect_registration_marks(image: Image.Image) -> dict[str, Any]:
         ),
         "next_step": "perspective_correction" if complete else "manual_alignment",
     }
+
+def correct_perspective(
+    image: Image.Image,
+    marks: dict[str, dict[str, float | int]],
+    output_width: int = 1240,
+    output_height: int = 1754,
+) -> Image.Image:
+    """Rectify a sheet to a canonical A4 portrait raster using its four mark centers.
+
+    The output dimensions represent an A4 page at approximately 150 DPI. Target
+    coordinates preserve the printed template's 5 mm edge offset and 7 mm mark size.
+    """
+    if set(marks) != set(CORNERS):
+        raise ValueError("All four registration marks are required")
+    if output_width < 800 or output_height < 1000:
+        raise ValueError("The corrected output dimensions are too small")
+
+    source_width, source_height = image.size
+    source_points = np.array(
+        [
+            [
+                float(marks[name]["center_x"]) * source_width,
+                float(marks[name]["center_y"]) * source_height,
+            ]
+            for name in ("top_left", "top_right", "bottom_right", "bottom_left")
+        ],
+        dtype=np.float32,
+    )
+    if not np.isfinite(source_points).all():
+        raise ValueError("Registration mark coordinates are invalid")
+    if (
+        np.any(source_points[:, 0] < 0)
+        or np.any(source_points[:, 0] >= source_width)
+        or np.any(source_points[:, 1] < 0)
+        or np.any(source_points[:, 1] >= source_height)
+    ):
+        raise ValueError("Registration mark coordinates are outside the image")
+
+    polygon = source_points.astype(np.int32).reshape((-1, 1, 2))
+    if not cv2.isContourConvex(polygon):
+        raise ValueError("Registration marks do not form a valid page quadrilateral")
+    page_area = abs(cv2.contourArea(polygon))
+    if page_area < source_width * source_height * 0.2:
+        raise ValueError("Detected page area is too small for reliable correction")
+
+    # The printed mark centers are 8.5 mm from each A4 edge (5 mm inset + half
+    # of the 7 mm mark). Map those centers to the matching canonical positions.
+    left = output_width * (8.5 / 210)
+    right = output_width * (201.5 / 210)
+    top = output_height * (8.5 / 297)
+    bottom = output_height * (288.5 / 297)
+    destination_points = np.array(
+        [[left, top], [right, top], [right, bottom], [left, bottom]],
+        dtype=np.float32,
+    )
+
+    transform = cv2.getPerspectiveTransform(source_points, destination_points)
+    if not np.isfinite(transform).all() or abs(float(np.linalg.det(transform))) < 1e-12:
+        raise ValueError("Could not calculate a stable perspective transform")
+
+    corrected = cv2.warpPerspective(
+        cv2.cvtColor(np.asarray(image.convert("RGB")), cv2.COLOR_RGB2BGR),
+        transform,
+        (output_width, output_height),
+        flags=cv2.INTER_CUBIC,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
+    return Image.fromarray(cv2.cvtColor(corrected, cv2.COLOR_BGR2RGB))
+
