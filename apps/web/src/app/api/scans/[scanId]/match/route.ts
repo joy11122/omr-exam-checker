@@ -75,7 +75,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
       },
       { new: true, runValidators: true },
-    ).select("_id examId studentId matchedAt").lean().exec();
+    ).select("_id examId studentId matchedAt").lean().exec() as unknown as Promise<{ _id: mongoose.Types.ObjectId; examId: mongoose.Types.ObjectId; studentId: mongoose.Types.ObjectId | null; matchedAt: Date | null } | null>;
 
     if (!scan) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
 
