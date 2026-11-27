@@ -1,8 +1,8 @@
 from io import BytesIO
 
 import cv2
-from fastapi.testclient import TestClient
 import numpy as np
+from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
 from app.main import app
