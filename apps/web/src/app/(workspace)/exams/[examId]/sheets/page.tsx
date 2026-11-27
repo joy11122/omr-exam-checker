@@ -88,7 +88,8 @@ export default async function OmrSheetsPage({ params, searchParams }: Props) {
     <div className="page-topline no-print"><span className="eyebrow">PRINT PRODUCTION</span><span className="secure-chip"><FileText size={14}/> A4 OMR template</span></div>
     <Link className="back-link no-print" href={"/exams/" + examId + "?institutionId=" + current.institutionId}><ArrowLeft size={15}/> Back to exam</Link>
     <section className="management-intro no-print"><p className="muted-copy">{exam.examCode} · {exam.title}</p><h1>OMR sheet designer</h1><p>Configure the answer-sheet layout, select a subject and candidate, then print a scan-ready A4 sheet.</p></section>
-    {query.saved ? <div className="form-alert success no-print"><CheckCircle2 size={16}/> Sheet template settings saved.</div> : null}\n    {query.error ? <div className="form-alert error no-print">The template could not be saved. Check your permissions and settings, then try again.</div> : null}
+    {query.saved ? <div className="form-alert success no-print"><CheckCircle2 size={16}/> Sheet template settings saved.</div> : null}
+    {query.error ? <div className="form-alert error no-print">The template could not be saved. Check your permissions and settings, then try again.</div> : null}
     <div className="omr-builder-grid no-print">
       <section className="management-panel">
         <div className="management-panel-heading"><div><h2>Template settings</h2><p>These settings apply to every subject in this exam.</p></div><Settings2 size={19}/></div>
