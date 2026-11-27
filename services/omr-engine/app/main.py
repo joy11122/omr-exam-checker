@@ -176,6 +176,30 @@ async def locate_registration_marks(
 
 
 @app.post(
+    "/v1/scans/bubbles",
+    tags=["scans"],
+    dependencies=[Depends(require_service_key)],
+)
+async def read_answer_bubbles(
+    file: Annotated[UploadFile, File(description="A perspective-corrected OMR answer sheet")],
+    layout: Annotated[str, Form(description="JSON bubble map with normalized coordinates")],
+) -> dict:
+    _, image = await read_upload(file)
+    try:
+        parsed_layout = BubbleLayout.model_validate_json(layout)
+        result = recognize_bubbles(
+            image,
+            [bubble.model_dump() for bubble in parsed_layout.bubbles],
+        )
+    except (ValidationError, ValueError, json.JSONDecodeError):
+        raise HTTPException(
+            status_code=422,
+            detail="The bubble layout is invalid or cannot be measured. Review calibration settings.",
+        ) from None
+    return result
+
+
+@app.post(
     "/v1/scans/perspective-correction",
     response_class=Response,
     tags=["scans"],
