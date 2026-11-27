@@ -53,7 +53,11 @@ export function ScanUpload() {
   const [matchingOptions, setMatchingOptions] = useState<{ exams: ExamOption[]; students: StudentOption[] }>({ exams: [], students: [] });
   const [matchingSelection, setMatchingSelection] = useState<Record<string, { examId: string; studentId: string }>>({});
   const [matchingBusy, setMatchingBusy] = useState<string | null>(null);
-  const [matchingMessages, setMatchingMessages] = useState<Record<string, string>>({});\n  const [recognitionSelection, setRecognitionSelection] = useState<Record<string, { subjectId: string; pageNumber: number }>>({});\n  const [recognitionBusy, setRecognitionBusy] = useState<string | null>(null);\n  const [recognitionMessages, setRecognitionMessages] = useState<Record<string, string>>({});\n  const [recognitionResults, setRecognitionResults] = useState<Record<string, { pageNumber: number; result: BubbleRecognition }>>({});
+  const [matchingMessages, setMatchingMessages] = useState<Record<string, string>>({});
+  const [recognitionSelection, setRecognitionSelection] = useState<Record<string, { subjectId: string; pageNumber: number }>>({});
+  const [recognitionBusy, setRecognitionBusy] = useState<string | null>(null);
+  const [recognitionMessages, setRecognitionMessages] = useState<Record<string, string>>({});
+  const [recognitionResults, setRecognitionResults] = useState<Record<string, { pageNumber: number; result: BubbleRecognition }>>({});
 
   const loadScans = useCallback(async () => {
     setHistoryLoading(true);
