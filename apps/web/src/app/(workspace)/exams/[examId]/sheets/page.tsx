@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, FileText, Printer, Settings2 } from "lucide-re
 import { auth } from "@/auth";
 import { updateOmrTemplate } from "@/app/actions/omr-sheets";
 import { PrintButton } from "@/components/omr/print-button";
+import { SaveBubbleCalibration } from "@/components/omr/save-bubble-calibration";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { Exam, Student } from "@/models";
@@ -20,8 +21,8 @@ type ExamRecord = {
 type StudentRecord = { _id: mongoose.Types.ObjectId; studentCode: string; fullName: string; className?: string; section?: string; rollNumber?: string };
 type Props = { params: Promise<{ examId: string }>; searchParams: Promise<{ institutionId?: string; subjectId?: string; studentId?: string; saved?: string; error?: string }> };
 
-function Bubble({ label }: { label: string }) {
-  return <span className="omr-bubble" aria-label={label}>{label}</span>;
+function Bubble({ label, question }: { label: string; question: number }) {
+  return <span className="omr-bubble" data-question={question} data-option={label} aria-label={`Question ${question}, option ${label}`}>{label}</span>;
 }
 
 function OmrPage({ exam, subject, student, settings, pageNumber, pageCount }: {
@@ -32,7 +33,7 @@ function OmrPage({ exam, subject, student, settings, pageNumber, pageCount }: {
   const lastQuestion = Math.min(subject.questionCount, firstQuestion + settings.questionsPerPage - 1);
   const questions = Array.from({ length: lastQuestion - firstQuestion + 1 }, (_, index) => firstQuestion + index);
   const sheetCode = [exam.examCode, String(subject._id).slice(-6), student?.studentCode ?? "BLANK"].join("-");
-  return <article className="omr-paper">
+  return <article className="omr-paper" data-omr-paper="">
     <div className="omr-registration top-left" /><div className="omr-registration top-right" />
     <div className="omr-registration bottom-left" /><div className="omr-registration bottom-right" />
     <header className="omr-paper-header">
@@ -55,7 +56,7 @@ function OmrPage({ exam, subject, student, settings, pageNumber, pageCount }: {
     <section className="omr-answers">
       <div className="omr-section-title"><strong>ANSWER GRID</strong><span>Fill exactly one bubble for each question</span></div>
       <div className="omr-question-grid">
-        {questions.map((question) => <div className="omr-question-row" key={question}><b>{String(question).padStart(3, "0")}</b>{["A", "B", "C", "D"].map((option) => <Bubble key={option} label={option} />)}</div>)}
+        {questions.map((question) => <div className="omr-question-row" key={question}><b>{String(question).padStart(3, "0")}</b>{["A", "B", "C", "D"].map((option) => <Bubble key={option} label={option} question={question} />)}</div>)}
       </div>
     </section>
     <footer className="omr-paper-footer"><span>{settings.instructions || "Use a dark blue or black ballpoint pen. Fill bubbles completely. Do not fold or mark this sheet."}</span><strong>{sheetCode}</strong></footer>
@@ -109,7 +110,7 @@ export default async function OmrSheetsPage({ params, searchParams }: Props) {
           <button className="button button-secondary" type="submit">Update preview</button>
           <p className="helper-copy">{students.length} active students loaded (maximum 200). Select a candidate to prefill their printed identity.</p>
         </form>
-        {subject ? <div className="omr-print-summary"><strong>{subject.name}</strong><span>{subject.questionCount} questions · {pageCount} A4 page{pageCount === 1 ? "" : "s"}</span><PrintButton/></div> : null}
+        {subject ? <div className="omr-print-summary"><strong>{subject.name}</strong><span>{subject.questionCount} questions · {pageCount} A4 page{pageCount === 1 ? "" : "s"}</span><SaveBubbleCalibration examId={examId} subjectId={String(subject._id)}/><PrintButton/></div> : null}
       </section>
     </div>
     {subject ? <div className="omr-print-stage">{Array.from({ length: pageCount }, (_, pageNumber) => <OmrPage key={pageNumber} exam={exam} subject={subject} student={student} settings={settings} pageNumber={pageNumber} pageCount={pageCount}/>)}</div> : null}
