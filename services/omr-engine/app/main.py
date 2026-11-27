@@ -9,7 +9,8 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Respons
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from app.bubble_recognition import recognize_bubbles\nfrom app.registration import correct_perspective, detect_registration_marks
+from app.bubble_recognition import recognize_bubbles
+from app.registration import correct_perspective, detect_registration_marks
 
 app = FastAPI(
     title="OMR Engine",
