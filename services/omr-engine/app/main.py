@@ -1,14 +1,15 @@
 import hashlib
 import hmac
+import json
 import os
 from io import BytesIO
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from app.registration import correct_perspective, detect_registration_marks
+from app.bubble_recognition import recognize_bubbles\nfrom app.registration import correct_perspective, detect_registration_marks
 
 app = FastAPI(
     title="OMR Engine",
@@ -35,6 +36,31 @@ class ScanIntakeResponse(BaseModel):
     sha256: str
     image: dict[str, int | str]
     quality: dict[str, bool | str]
+
+
+
+class BubbleCoordinate(BaseModel):
+    question_number: int = Field(ge=1, le=300)
+    option: Literal["A", "B", "C", "D", "E"]
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    radius: float = Field(ge=0.003, le=0.05)
+
+
+class BubbleLayout(BaseModel):
+    bubbles: list[BubbleCoordinate] = Field(min_length=4, max_length=1500)
+
+    @model_validator(mode="after")
+    def validate_question_groups(self) -> "BubbleLayout":
+        grouped: dict[int, set[str]] = {}
+        for bubble in self.bubbles:
+            options = grouped.setdefault(bubble.question_number, set())
+            if bubble.option in options:
+                raise ValueError("Each question can contain an option only once")
+            options.add(bubble.option)
+        if any(len(options) < 2 or len(options) > 5 for options in grouped.values()):
+            raise ValueError("Each question must have between two and five options")
+        return self
 
 
 async def require_service_key(
