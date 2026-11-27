@@ -86,7 +86,9 @@ def test_scan_intake_accepts_valid_portrait_image(monkeypatch) -> None:
 def test_scan_intake_flags_low_contrast_for_manual_review(monkeypatch) -> None:
     monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
 
-    response = upload_image(make_image(color=(220, 220, 220)))
+    # No registration marks: they would artificially increase the global contrast
+    # of an otherwise flat image and invalidate this specific fixture.
+    response = upload_image(make_image(color=(220, 220, 220), marks=False))
 
     assert response.status_code == 200
     assert response.json()["status"] == "review_required"
