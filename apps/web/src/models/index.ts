@@ -91,7 +91,31 @@ const examSchema = new Schema({
 examSchema.index({ institutionId: 1, examCode: 1 }, { unique: true });
 examSchema.index({ institutionId: 1, startsAt: 1 });
 
-export const User = mongoose.models.User ?? mongoose.model("User", userSchema);
+
+const scanSchema = new Schema({
+  institutionId: { type: Schema.Types.ObjectId, ref: "Institution", required: true, index: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+  originalFilename: { type: String, required: true, maxlength: 180 },
+  mimeType: { type: String, required: true, enum: ["image/jpeg", "image/png", "image/webp"] },
+  sizeBytes: { type: Number, required: true, min: 1, max: 10 * 1024 * 1024 },
+  sha256: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
+  imageFileId: { type: Schema.Types.ObjectId, required: true },
+  image: {
+    format: { type: String, required: true, maxlength: 12 },
+    width: { type: Number, required: true, min: 1 },
+    height: { type: Number, required: true, min: 1 },
+  },
+  quality: {
+    portrait: { type: Boolean, required: true },
+    contrast: { type: Boolean, required: true },
+    status: { type: String, required: true, maxlength: 40 },
+  },
+  status: { type: String, enum: ["intake_validated", "review_required"], required: true, index: true },
+}, { timestamps: true, collection: "scans" });
+scanSchema.index({ institutionId: 1, sha256: 1 }, { unique: true });
+scanSchema.index({ institutionId: 1, createdAt: -1 });
+
+export const Scan = mongoose.models.Scan ?? mongoose.model("Scan", scanSchema);\n\nexport const User = mongoose.models.User ?? mongoose.model("User", userSchema);
 export const Institution = mongoose.models.Institution ?? mongoose.model("Institution", institutionSchema);
 export const Membership = mongoose.models.Membership ?? mongoose.model("Membership", membershipSchema);
 export const Student = mongoose.models.Student ?? mongoose.model("Student", studentSchema);
