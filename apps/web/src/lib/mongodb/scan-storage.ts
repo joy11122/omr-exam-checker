@@ -1,6 +1,5 @@
 import "server-only";
 
-import { GridFSBucket, ObjectId } from "mongodb";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb/client";
 
@@ -9,7 +8,7 @@ const BUCKET_NAME = "omrScans";
 function getBucket() {
   const database = mongoose.connection.db;
   if (!database) throw new Error("MongoDB is not connected.");
-  return new GridFSBucket(database, { bucketName: BUCKET_NAME });
+  return new mongoose.mongo.GridFSBucket(database, { bucketName: BUCKET_NAME });
 }
 
 export async function storeScanImage(input: {
@@ -21,7 +20,7 @@ export async function storeScanImage(input: {
 }) {
   await connectToDatabase();
   const bucket = getBucket();
-  const fileId = new ObjectId();
+  const fileId = new mongoose.mongo.ObjectId();
   await new Promise<void>((resolve, reject) => {
     const upload = bucket.openUploadStreamWithId(fileId, input.filename, {
       contentType: input.mimeType,
@@ -35,13 +34,13 @@ export async function storeScanImage(input: {
     upload.once("finish", () => resolve());
     upload.end(input.bytes);
   });
-  return fileId;
+  return fileId.toHexString();
 }
 
-export async function deleteScanImage(fileId: mongoose.Types.ObjectId | ObjectId) {
+export async function deleteScanImage(fileId: string) {
   await connectToDatabase();
   try {
-    await getBucket().delete(new ObjectId(String(fileId)));
+    await getBucket().delete(new mongoose.mongo.ObjectId(fileId));
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
     throw error;
@@ -50,9 +49,9 @@ export async function deleteScanImage(fileId: mongoose.Types.ObjectId | ObjectId
 
 export async function readScanImage(fileId: string) {
   await connectToDatabase();
-  if (!ObjectId.isValid(fileId)) return null;
+  if (!mongoose.mongo.ObjectId.isValid(fileId)) return null;
   const bucket = getBucket();
-  const id = new ObjectId(fileId);
+  const id = new mongoose.mongo.ObjectId(fileId);
   const files = await bucket.find({ _id: id }).limit(1).toArray();
   if (!files[0]) return null;
   const chunks: Buffer[] = [];
