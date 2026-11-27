@@ -146,7 +146,7 @@ export function ScanUpload() {
             <strong>{file ? file.name : "Choose an answer sheet image"}</strong>
             <span>{file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB · ${file.type || "Unknown type"}` : "Select a file from your device"}</span>
           </button>
-          <p id="scan-upload-help" className="scan-upload-help">The image is sent to the private OMR intake service for validation. It is not saved as a scan record yet.</p>
+          <p id="scan-upload-help" className="scan-upload-help">The image is validated and saved privately to this institution’s scan history.</p>
           {error ? <p className="form-alert error" role="alert"><AlertCircle size={16} /> {error}</p> : null}
           <button className="button button-primary" type="submit" disabled={!file || busy}>
             {busy ? <><LoaderCircle className="spin" size={16} /> Checking image…</> : <><FileImage size={16} /> Validate image</>}
