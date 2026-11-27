@@ -8,6 +8,20 @@ import { Exam, Student } from "@/models";
 
 export const runtime = "nodejs";
 
+type ExamMatchingRecord = {
+  _id: mongoose.Types.ObjectId;
+  title: string;
+  examCode: string;
+  status: string;
+  sheetSettings?: { questionsPerPage?: number };
+  subjects: Array<{
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    questionCount: number;
+    bubbleLayouts?: Array<{ pageNumber: number }>;
+  }>;
+};
+
 export async function GET() {
   try {
     const session = await auth();
@@ -20,23 +34,11 @@ export async function GET() {
     await connectToDatabase();
     const institutionId = new mongoose.Types.ObjectId(institution.institutionId);
     const [exams, students] = await Promise.all([
-      Exam.find({ institutionId }).sort({ createdAt: -1 }).limit(100).select("_id title examCode status sheetSettings.questionsPerPage subjects.name subjects.questionCount subjects.bubbleLayouts.pageNumber").lean().exec(),
+      Exam.find({ institutionId }).sort({ createdAt: -1 }).limit(100).select("_id title examCode status sheetSettings.questionsPerPage subjects.name subjects.questionCount subjects.bubbleLayouts.pageNumber").lean().exec() as unknown as Promise<ExamMatchingRecord[]>,
       Student.find({ institutionId, status: "active" }).sort({ fullName: 1 }).limit(300).select("_id fullName studentCode className rollNumber").lean().exec(),
     ]);
     return NextResponse.json({
-      exams: exams.map((exam: {
-        _id: mongoose.Types.ObjectId;
-        title: string;
-        examCode: string;
-        status: string;
-        sheetSettings?: { questionsPerPage?: number };
-        subjects: Array<{
-          _id: mongoose.Types.ObjectId;
-          name: string;
-          questionCount: number;
-          bubbleLayouts?: Array<{ pageNumber: number }>;
-        }>;
-      }) => ({
+      exams: exams.map((exam) => ({
         id: String(exam._id),
         title: exam.title,
         examCode: exam.examCode,
