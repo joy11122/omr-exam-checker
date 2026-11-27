@@ -16,7 +16,7 @@ export function ScanUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<IntakeResult | null>(null);
+  const [result, setResult] = useState<IntakeResult | null>(null);\n  const [correctedUrl, setCorrectedUrl] = useState<string | null>(null);\n  const [correcting, setCorrecting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,7 +112,7 @@ export function ScanUpload() {
             <div><dt>Image contrast</dt><dd>{result.quality.contrast ? "Passed" : "Needs review"}</dd></div>
           </dl>
           <p className="scan-fingerprint">Image fingerprint: <code>{result.sha256}</code></p>
-          <p className="scan-disclaimer">This is an intake check only. Registration-mark detection, perspective correction, bubble recognition, student matching, and grading are not active yet.</p>
+          <p className="scan-disclaimer">Intake and registration-mark alignment are available for review. Bubble recognition, student matching, and grading are not active yet.</p>\n          <button className="button button-primary" type="button" onClick={handleCorrect} disabled={correcting}>\n            {correcting ? <><LoaderCircle className="spin" size={16} /> Aligning sheet…</> : "Correct perspective"}\n          </button>\n          {correctedUrl ? <div className="scan-corrected-preview"><h3>Aligned sheet preview</h3><img src={correctedUrl} alt="Perspective-corrected OMR sheet" /><a href={correctedUrl} download="corrected-omr-sheet.jpg">Download corrected image</a></div> : null}
         </section>
       ) : null}
     </section>
