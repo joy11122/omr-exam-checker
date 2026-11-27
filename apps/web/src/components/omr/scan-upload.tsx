@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { AlertCircle, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
 
@@ -26,6 +26,7 @@ type IntakeResult = {
 
 export function ScanUpload() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -168,7 +169,16 @@ export function ScanUpload() {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
-            aria-label="Choose an OMR answer sheet image"
+            aria-label="Choose an OMR answer sheet image from your device"
+          />
+          <input
+            ref={cameraRef}
+            className="scan-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            onChange={handleFileChange}
+            aria-label="Take a photo of an OMR answer sheet"
           />
           <button
             className="scan-dropzone"
@@ -177,10 +187,18 @@ export function ScanUpload() {
             aria-describedby="scan-upload-help"
           >
             <span className="scan-dropzone-icon"><UploadCloud size={23} /></span>
-            <strong>{file ? file.name : "Choose an answer sheet image"}</strong>
-            <span>{file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB · ${file.type || "Unknown type"}` : "Select a file from your device"}</span>
+            <strong>{file ? file.name : "Answer sheet image"}</strong>
+            <span>{file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB · ${file.type || "Unknown type"}` : "Use the camera or choose an image below"}</span>
           </button>
-          <p id="scan-upload-help" className="scan-upload-help">The image is validated and saved privately to this institution’s scan history.</p>
+          <div className="scan-capture-actions">
+            <button className="button button-secondary" type="button" onClick={() => cameraRef.current?.click()}>
+              <Camera size={16} /> Take photo
+            </button>
+            <button className="button button-secondary" type="button" onClick={() => inputRef.current?.click()}>
+              <FileImage size={16} /> Choose from device
+            </button>
+          </div>
+          <p id="scan-upload-help" className="scan-upload-help">On Android, Take photo opens the rear camera when supported. You can also choose an existing image. The image is validated and saved privately to this institution’s scan history.</p>
           {error ? <p className="form-alert error" role="alert"><AlertCircle size={16} /> {error}</p> : null}
           <button className="button button-primary" type="submit" disabled={!file || busy}>
             {busy ? <><LoaderCircle className="spin" size={16} /> Checking image…</> : <><FileImage size={16} /> Validate image</>}
