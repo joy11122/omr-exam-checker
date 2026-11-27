@@ -26,7 +26,7 @@ export function ScanUpload() {
     try {
       const formData = new FormData();
       formData.set("file", file);
-      const response = await fetch("/api/scans/perspective-correction", {
+      const response = await fetch("/api/scans/correct", {
         method: "POST",
         body: formData,
       });
