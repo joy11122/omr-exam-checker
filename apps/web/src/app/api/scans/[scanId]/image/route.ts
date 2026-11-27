@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const scan = await Scan.findOne({
       _id: new mongoose.Types.ObjectId(scanId),
       institutionId: new mongoose.Types.ObjectId(institution.institutionId),
-    }).select("imageFileId mimeType originalFilename").lean().exec();
+    }).select("imageFileId mimeType originalFilename").lean().exec() as unknown as { imageFileId: mongoose.Types.ObjectId; mimeType: string; originalFilename: string } | null;
     if (!scan) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
     const image = await readScanImage(String(scan.imageFileId));
     if (!image) return NextResponse.json({ error: "Scan image is unavailable." }, { status: 404 });
