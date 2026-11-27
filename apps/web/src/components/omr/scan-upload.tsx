@@ -23,7 +23,9 @@ type ScanRecord = {
 type ExamOption = { id: string; title: string; examCode: string; status: string; questionsPerPage: number; subjects: Array<{ id: string; name: string; questionCount: number; calibratedPages: number[] }> };
 type StudentOption = { id: string; name: string; studentCode: string; className: string; rollNumber: string };
 
-type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: Array<{ question_number: number; answer: string | null; status: string; confidence: number; options: Array<{ option: string; fill_ratio: number; confidence: number }> }> };
+type BubbleOptionScore = { option: string; fill_ratio: number; confidence: number };
+type RecognizedQuestion = { question_number: number; answer: string | null; status: string; confidence: number; options: BubbleOptionScore[] };
+type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: RecognizedQuestion[] };
 
 type IntakeResult = {
   status: "accepted" | "review_required";
