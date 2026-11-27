@@ -5,6 +5,7 @@ import numpy as np
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
+from app.bubble_recognition import recognize_bubbles
 from app.main import app
 
 client = TestClient(app)
@@ -241,3 +242,76 @@ def test_perspective_correction_requires_all_registration_marks(monkeypatch) -> 
 
     assert response.status_code == 422
     assert "All four registration marks" in response.json()["detail"]
+
+
+def make_bubble_layout() -> list[dict[str, float | int | str]]:
+    return [
+        {"question_number": 1, "option": option, "x": x, "y": 0.30, "radius": 0.012}
+        for option, x in zip(("A", "B", "C", "D"), (0.25, 0.31, 0.37, 0.43), strict=True)
+    ]
+
+
+def make_bubble_image(filled: tuple[str, ...] = ("A",)) -> Image.Image:
+    image = Image.new("RGB", (1200, 1600), "white")
+    draw = ImageDraw.Draw(image)
+    for item in make_bubble_layout():
+        cx = int(float(item["x"]) * image.width)
+        cy = int(float(item["y"]) * image.height)
+        radius = int(float(item["radius"]) * min(image.size))
+        draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), outline="black", width=3)
+        if item["option"] in filled:
+            draw.ellipse((cx - radius + 3, cy - radius + 3, cx + radius - 3, cy + radius - 3), fill="black")
+    return image
+
+
+def test_bubble_recognition_reads_one_filled_answer() -> None:
+    result = recognize_bubbles(make_bubble_image(), make_bubble_layout())
+
+    assert result["stage"] == "bubble_recognition"
+    assert result["status"] == "recognized"
+    assert result["calibration_required"] is True
+    assert result["questions"][0]["answer"] == "A"
+    assert result["questions"][0]["status"] == "recognized"
+    assert result["summary"]["recognized"] == 1
+
+
+def test_bubble_recognition_flags_blank_and_multiple_answers() -> None:
+    blank = recognize_bubbles(make_bubble_image(()), make_bubble_layout())
+    multiple = recognize_bubbles(make_bubble_image(("A", "C")), make_bubble_layout())
+
+    assert blank["questions"][0]["status"] == "blank"
+    assert blank["questions"][0]["answer"] is None
+    assert multiple["questions"][0]["status"] == "multiple"
+    assert multiple["questions"][0]["answer"] is None
+
+
+def test_bubble_recognition_endpoint_requires_service_auth(monkeypatch) -> None:
+    import json
+
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+    buffer = BytesIO()
+    make_bubble_image().save(buffer, format="PNG")
+    response = client.post(
+        "/v1/scans/bubbles",
+        headers={"Authorization": "Bearer wrong"},
+        files={"file": ("sheet.png", buffer.getvalue(), "image/png")},
+        data={"layout": json.dumps({"bubbles": make_bubble_layout()})},
+    )
+
+    assert response.status_code == 401
+
+
+def test_bubble_recognition_endpoint_rejects_invalid_layout(monkeypatch) -> None:
+    import json
+
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+    buffer = BytesIO()
+    make_bubble_image().save(buffer, format="PNG")
+    response = client.post(
+        "/v1/scans/bubbles",
+        headers={"Authorization": f"Bearer {API_KEY}"},
+        files={"file": ("sheet.png", buffer.getvalue(), "image/png")},
+        data={"layout": json.dumps({"bubbles": [{"question_number": 1, "option": "A", "x": 0.2, "y": 0.3, "radius": 0.012}]})},
+    )
+
+    assert response.status_code == 422
