@@ -25,7 +25,7 @@ type ExamOption = { id: string; title: string; examCode: string; status: string;
 type StudentOption = { id: string; name: string; studentCode: string; className: string; rollNumber: string };
 
 type BubbleOptionScore = { option: string; fill_ratio: number; confidence: number };
-type RecognizedQuestion = { question_number: number; answer: string | null; status: string; confidence: number; options: BubbleOptionScore[] };
+type RecognizedQuestion = { question_number: number; answer: string | null; status: string; confidence: number; options: BubbleOptionScore[]; edits?: Array<{ previousAnswer: string | null; nextAnswer: string; changedBy: string; changedAt: string }> };
 type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: RecognizedQuestion[] };
 type ReviewAnswerValue = "A" | "B" | "C" | "D" | "BLANK" | "MULTIPLE" | "UNREADABLE";
 type RecognitionDraft = { recognitionId: string; pageNumber: number; result: BubbleRecognition; answers: Array<{ questionNumber: number; answer: ReviewAnswerValue }>; reviewed: boolean };
@@ -428,6 +428,15 @@ export function ScanUpload() {
                                         <option value="BLANK">Blank</option><option value="MULTIPLE">Multiple marks</option><option value="UNREADABLE">Unreadable</option>
                                       </select>
                                       <small>{Math.round(question.confidence * 100)}% · {question.status.replace("_", " ")}</small>
+                                      {question.edits?.length ? (
+                                        <small className="scan-answer-audit">
+                                          {question.edits.map((edit, index) => (
+                                            <span key={`${edit.changedAt}-${index}`}>
+                                              Corrected: {edit.previousAnswer ?? "No previous answer"} → {edit.nextAnswer} · {new Date(edit.changedAt).toLocaleString()}
+                                            </span>
+                                          ))}
+                                        </small>
+                                      ) : null}
                                     </li>
                                   );
                                 })}
