@@ -46,7 +46,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const exam = await Exam.findOne({ _id: examId, institutionId })
       .select("_id title examCode status")
       .lean()
-      .exec();
+      .exec() as unknown as { _id: mongoose.Types.ObjectId; title: string; examCode: string; status: string } | null;
     if (!exam) {
       return NextResponse.json({ error: "The selected exam was not found in this institution." }, { status: 404 });
     }
@@ -75,7 +75,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
       },
       { new: true, runValidators: true },
-    ).select("_id examId studentId matchedAt").lean().exec() as unknown as Promise<{ _id: mongoose.Types.ObjectId; examId: mongoose.Types.ObjectId; studentId: mongoose.Types.ObjectId | null; matchedAt: Date | null } | null>;
+    ).select("_id examId studentId matchedAt").lean().exec() as unknown as { _id: mongoose.Types.ObjectId; examId: mongoose.Types.ObjectId; studentId: mongoose.Types.ObjectId | null; matchedAt: Date | null } | null;
 
     if (!scan) return NextResponse.json({ error: "Scan not found." }, { status: 404 });
 
