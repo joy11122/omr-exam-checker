@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from math import hypot
 from typing import Any
 
 import cv2
