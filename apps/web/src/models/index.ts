@@ -111,6 +111,10 @@ const scanSchema = new Schema({
     status: { type: String, required: true, maxlength: 40 },
   },
   status: { type: String, enum: ["intake_validated", "review_required"], required: true, index: true },
+  examId: { type: Schema.Types.ObjectId, ref: "Exam", default: null, index: true },
+  studentId: { type: Schema.Types.ObjectId, ref: "Student", default: null, index: true },
+  matchedAt: { type: Date, default: null },
+  matchedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
 }, { timestamps: true, collection: "scans" });
 scanSchema.index({ institutionId: 1, sha256: 1 }, { unique: true });
 scanSchema.index({ institutionId: 1, createdAt: -1 });
