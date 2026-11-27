@@ -1,5 +1,7 @@
 from io import BytesIO
 
+import cv2
+import numpy as np
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
@@ -184,3 +186,58 @@ def test_registration_marks_endpoint_requires_service_auth(monkeypatch) -> None:
     )
 
     assert response.status_code == 401
+
+
+
+def make_perspective_image() -> bytes:
+    original = Image.open(BytesIO(make_image())).convert("RGB")
+    pixels = np.asarray(original)
+    height, width = pixels.shape[:2]
+    source = np.float32(
+        [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
+    )
+    destination = np.float32(
+        [[75, 45], [1125, 70], [1160, 1535], [35, 1560]]
+    )
+    transform = cv2.getPerspectiveTransform(source, destination)
+    warped = cv2.warpPerspective(
+        pixels,
+        transform,
+        (width, height),
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
+    buffer = BytesIO()
+    Image.fromarray(warped).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def test_perspective_correction_rectifies_skewed_a4_sheet(monkeypatch) -> None:
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+
+    response = upload_image(
+        make_perspective_image(),
+        endpoint="/v1/scans/perspective-correction",
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.headers["x-omr-status"] == "corrected"
+    assert response.headers["x-omr-registration-marks"] == "4"
+    assert response.headers["x-omr-width"] == "1240"
+    assert response.headers["x-omr-height"] == "1754"
+    corrected = Image.open(BytesIO(response.content))
+    assert corrected.size == (1240, 1754)
+    assert corrected.format == "JPEG"
+
+
+def test_perspective_correction_requires_all_registration_marks(monkeypatch) -> None:
+    monkeypatch.setenv("OMR_ENGINE_API_KEY", API_KEY)
+
+    response = upload_image(
+        make_image(marks=False),
+        endpoint="/v1/scans/perspective-correction",
+    )
+
+    assert response.status_code == 422
+    assert "All four registration marks" in response.json()["detail"]
