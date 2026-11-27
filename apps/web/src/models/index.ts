@@ -115,7 +115,9 @@ const scanSchema = new Schema({
 scanSchema.index({ institutionId: 1, sha256: 1 }, { unique: true });
 scanSchema.index({ institutionId: 1, createdAt: -1 });
 
-export const Scan = mongoose.models.Scan ?? mongoose.model("Scan", scanSchema);\n\nexport const User = mongoose.models.User ?? mongoose.model("User", userSchema);
+export const Scan = mongoose.models.Scan ?? mongoose.model("Scan", scanSchema);
+
+export const User = mongoose.models.User ?? mongoose.model("User", userSchema);
 export const Institution = mongoose.models.Institution ?? mongoose.model("Institution", institutionSchema);
 export const Membership = mongoose.models.Membership ?? mongoose.model("Membership", membershipSchema);
 export const Student = mongoose.models.Student ?? mongoose.model("Student", studentSchema);
