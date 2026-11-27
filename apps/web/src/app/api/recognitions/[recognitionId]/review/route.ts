@@ -74,7 +74,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       const edits = current.edits ?? [];
       if (next.answer !== current.answer) {
         edits.push({
-          previousAnswer: current.answer === "BLANK" || current.answer === "MULTIPLE" || current.answer === "UNREADABLE" ? null : current.answer,
+          previousAnswer: current.answer,
           nextAnswer: next.answer,
           changedBy: reviewerId,
           changedAt: reviewedAt,
