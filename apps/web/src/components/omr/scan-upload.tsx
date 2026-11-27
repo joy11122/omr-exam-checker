@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
@@ -39,7 +39,7 @@ export function ScanUpload() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
 
-  async function loadScans() {
+  const loadScans = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
     try {
@@ -52,11 +52,11 @@ export function ScanUpload() {
     } finally {
       setHistoryLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadScans();
-  }, []);
+  }, [loadScans]);
 
 
   async function handleDetectMarks() {
