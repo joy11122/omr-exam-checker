@@ -134,7 +134,7 @@ export function ScanUpload() {
       });
       const payload = await response.json() as { recognitionId?: string; result?: BubbleRecognition; error?: string };
       if (!response.ok || !payload.result || !payload.recognitionId) throw new Error(payload.error || "Unable to recognize this sheet page.");
-      setRecognitionResults((previous) => ({ ...previous, [scanId]: { recognitionId: payload.recognitionId!, pageNumber, result: payload.result!, reviewed: false, answers: payload.result!.questions.map((question) => ({ questionNumber: question.question_number, answer: question.answer ?? (question.status === "blank" ? "BLANK" : question.status === "multiple" ? "MULTIPLE" : "UNREADABLE") as ReviewAnswerValue })) } }));
+      setRecognitionResults((previous) => ({ ...previous, [scanId]: { recognitionId: payload.recognitionId!, pageNumber, result: payload.result!, reviewed: false, answers: payload.result!.questions.map((question) => ({ questionNumber: question.question_number, answer: (question.answer ?? (question.status === "blank" ? "BLANK" : question.status === "multiple" ? "MULTIPLE" : "UNREADABLE")) as ReviewAnswerValue })) } }));
       setRecognitionMessages((previous) => ({ ...previous, [scanId]: "Draft saved. Review every answer, then submit the examiner review." }));
     } catch (caught) {
       setRecognitionMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to recognize this sheet page." }));
