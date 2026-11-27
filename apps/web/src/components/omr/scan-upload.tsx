@@ -23,7 +23,9 @@ type ScanRecord = {
 type ExamOption = { id: string; title: string; examCode: string; status: string; questionsPerPage: number; subjects: Array<{ id: string; name: string; questionCount: number; calibratedPages: number[] }> };
 type StudentOption = { id: string; name: string; studentCode: string; className: string; rollNumber: string };
 
-type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: Array<{ question_number: number; answer: string | null; status: string; confidence: number; options: Array<{ option: string; fill_ratio: number; confidence: number }> }> };\n\ntype IntakeResult = {
+type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: Array<{ question_number: number; answer: string | null; status: string; confidence: number; options: Array<{ option: string; fill_ratio: number; confidence: number }> }> };
+
+type IntakeResult = {
   status: "accepted" | "review_required";
   stage: "intake_validated";
   sha256: string;
@@ -394,7 +396,7 @@ export function ScanUpload() {
           </dl>
           <p className="scan-fingerprint">Image fingerprint: <code>{result.sha256}</code></p>
           {savedScanId ? <p className="scan-disclaimer" role="status">Scan saved privately. Record: <code>{savedScanId}</code></p> : null}
-          <p className="scan-disclaimer">Image intake, registration-mark inspection, perspective correction, and manual exam/student matching are available. Bubble recognition and automated grading are not active yet.</p>
+          <p className="scan-disclaimer">Image intake, registration-mark inspection, perspective correction, and manual exam/student matching are available. Experimental bubble recognition requires a saved subject calibration and manual answer review; grading is not active.</p>
           <div className="scan-review-actions">
             <button className="button button-secondary" type="button" onClick={handleDetectMarks} disabled={detecting}>
               {detecting ? <><LoaderCircle className="spin" size={16} /> Checking marks…</> : "Inspect registration marks"}
