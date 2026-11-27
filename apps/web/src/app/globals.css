@@ -372,3 +372,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .scan-history-icon { width: 32px; height: 32px; }
   .scan-history-open { grid-column: 2; justify-self: start; }
 }
+
+
+.scan-capture-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.scan-capture-actions .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+@media (max-width: 600px) {
+  .scan-capture-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .scan-capture-actions .button { width: 100%; }
+}
