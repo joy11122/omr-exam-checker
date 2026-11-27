@@ -26,6 +26,8 @@ type StudentOption = { id: string; name: string; studentCode: string; className:
 type BubbleOptionScore = { option: string; fill_ratio: number; confidence: number };
 type RecognizedQuestion = { question_number: number; answer: string | null; status: string; confidence: number; options: BubbleOptionScore[] };
 type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: RecognizedQuestion[] };
+type ReviewAnswerValue = "A" | "B" | "C" | "D" | "BLANK" | "MULTIPLE" | "UNREADABLE";
+type RecognitionDraft = { recognitionId: string; pageNumber: number; result: BubbleRecognition; answers: Array<{ questionNumber: number; answer: ReviewAnswerValue }>; reviewed: boolean };
 
 type IntakeResult = {
   status: "accepted" | "review_required";
@@ -57,7 +59,8 @@ export function ScanUpload() {
   const [recognitionSelection, setRecognitionSelection] = useState<Record<string, { subjectId: string; pageNumber: number }>>({});
   const [recognitionBusy, setRecognitionBusy] = useState<string | null>(null);
   const [recognitionMessages, setRecognitionMessages] = useState<Record<string, string>>({});
-  const [recognitionResults, setRecognitionResults] = useState<Record<string, { pageNumber: number; result: BubbleRecognition }>>({});
+  const [recognitionResults, setRecognitionResults] = useState<Record<string, RecognitionDraft>>({});
+  const [reviewBusy, setReviewBusy] = useState<string | null>(null);
 
   const loadScans = useCallback(async () => {
     setHistoryLoading(true);
@@ -121,14 +124,36 @@ export function ScanUpload() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subjectId, pageNumber }),
       });
-      const payload = await response.json() as { result?: BubbleRecognition; error?: string };
-      if (!response.ok || !payload.result) throw new Error(payload.error || "Unable to recognize this sheet page.");
-      setRecognitionResults((previous) => ({ ...previous, [scanId]: { pageNumber, result: payload.result! } }));
-      setRecognitionMessages((previous) => ({ ...previous, [scanId]: "Recognition complete. Review every answer before using it." }));
+      const payload = await response.json() as { recognitionId?: string; result?: BubbleRecognition; error?: string };
+      if (!response.ok || !payload.result || !payload.recognitionId) throw new Error(payload.error || "Unable to recognize this sheet page.");
+      setRecognitionResults((previous) => ({ ...previous, [scanId]: { recognitionId: payload.recognitionId!, pageNumber, result: payload.result!, reviewed: false, answers: payload.result!.questions.map((question) => ({ questionNumber: question.question_number, answer: question.answer ?? (question.status === "blank" ? "BLANK" : question.status === "multiple" ? "MULTIPLE" : "UNREADABLE") })) } }));
+      setRecognitionMessages((previous) => ({ ...previous, [scanId]: "Draft saved. Review every answer, then submit the examiner review." }));
     } catch (caught) {
       setRecognitionMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to recognize this sheet page." }));
     } finally {
       setRecognitionBusy(null);
+    }
+  }
+
+  async function handleSaveReview(scanId: string) {
+    const draft = recognitionResults[scanId];
+    if (!draft || draft.reviewed || reviewBusy) return;
+    setReviewBusy(scanId);
+    setRecognitionMessages((previous) => ({ ...previous, [scanId]: "" }));
+    try {
+      const response = await fetch(`/api/recognitions/${draft.recognitionId}/review`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers: draft.answers }),
+      });
+      const payload = await response.json() as { recognition?: { status: string }; error?: string };
+      if (!response.ok || payload.recognition?.status !== "reviewed") throw new Error(payload.error || "Unable to save the examiner review.");
+      setRecognitionResults((previous) => ({ ...previous, [scanId]: { ...previous[scanId], reviewed: true } }));
+      setRecognitionMessages((previous) => ({ ...previous, [scanId]: "Examiner review saved and locked. Answer edits are recorded in the audit history." }));
+    } catch (caught) {
+      setRecognitionMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to save the examiner review." }));
+    } finally {
+      setReviewBusy(null);
     }
   }
 
@@ -357,20 +382,54 @@ export function ScanUpload() {
                       {recognitionMessages[scan.id] ? <p className="scan-match-message" role="status">{recognitionMessages[scan.id]}</p> : null}
                       {recognitionResults[scan.id] ? (
                         <div className="scan-recognition-result" aria-live="polite">
-                          <p>Page {recognitionResults[scan.id].pageNumber + 1} · {recognitionResults[scan.id].result.question_count} questions · {recognitionResults[scan.id].result.status.replace("_", " ")}</p>
+                          <p>Page {recognitionResults[scan.id].pageNumber + 1} · {recognitionResults[scan.id].result.question_count} questions · {recognitionResults[scan.id].reviewed ? "reviewed and locked" : "pending examiner review"}</p>
                           <div className="scan-recognition-summary">
                             {Object.entries(recognitionResults[scan.id].result.summary).map(([status, count]) => <span key={status}>{status}: <strong>{count}</strong></span>)}
                           </div>
-                          <ol>
-                            {recognitionResults[scan.id].result.questions.map((question) => (
-                              <li key={question.question_number}>
-                                <span>Q{question.question_number}</span>
-                                <strong>{question.answer ?? question.status}</strong>
-                                <small>{Math.round(question.confidence * 100)}% confidence</small>
-                              </li>
-                            ))}
-                          </ol>
-                          <p className="helper-copy">Experimental extraction only. Verify every answer against the original sheet; no marks or grades have been calculated.</p>
+                          <div className="scan-manual-review">
+                            <div className="scan-review-source">
+                              <strong>Original answer sheet</strong>
+                              <Image src={`/api/scans/${scan.id}/image`} alt={`Original answer sheet: ${scan.filename}`} width={420} height={594} unoptimized />
+                              <a href={`/api/scans/${scan.id}/image`} target="_blank" rel="noreferrer">Open full-size scan</a>
+                            </div>
+                            <div className="scan-review-answers">
+                              <strong>Confirm or correct each answer</strong>
+                              <ol>
+                                {recognitionResults[scan.id].result.questions.map((question) => {
+                                  const current = recognitionResults[scan.id].answers.find((answer) => answer.questionNumber === question.question_number);
+                                  const uncertain = question.status !== "recognized" || question.confidence < 0.75;
+                                  return (
+                                    <li key={question.question_number} className={uncertain ? "needs-review" : ""}>
+                                      <label htmlFor={`answer-${scan.id}-${question.question_number}`}>Q{question.question_number}</label>
+                                      <select
+                                        id={`answer-${scan.id}-${question.question_number}`}
+                                        value={current?.answer ?? "UNREADABLE"}
+                                        disabled={recognitionResults[scan.id].reviewed || reviewBusy === scan.id}
+                                        onChange={(event) => {
+                                          const answer = event.target.value as ReviewAnswerValue;
+                                          setRecognitionResults((previous) => ({
+                                            ...previous,
+                                            [scan.id]: {
+                                              ...previous[scan.id],
+                                              answers: previous[scan.id].answers.map((item) => item.questionNumber === question.question_number ? { ...item, answer } : item),
+                                            },
+                                          }));
+                                        }}
+                                      >
+                                        <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                                        <option value="BLANK">Blank</option><option value="MULTIPLE">Multiple marks</option><option value="UNREADABLE">Unreadable</option>
+                                      </select>
+                                      <small>{Math.round(question.confidence * 100)}% · {question.status.replace("_", " ")}</small>
+                                    </li>
+                                  );
+                                })}
+                              </ol>
+                              <button className="button button-primary" type="button" disabled={recognitionResults[scan.id].reviewed || reviewBusy !== null} onClick={() => void handleSaveReview(scan.id)}>
+                                {recognitionResults[scan.id].reviewed ? "Review locked" : reviewBusy === scan.id ? "Saving review…" : "Save examiner review"}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="helper-copy">Low-confidence and ambiguous detections are highlighted. Compare every answer with the original image. Saving locks this review and records changed answers; grading remains disabled.</p>
                         </div>
                       ) : null}
                     </div>
