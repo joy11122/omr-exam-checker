@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const scans = await Scan.find({ institutionId: new mongoose.Types.ObjectId(institution.institutionId) })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .select("_id originalFilename mimeType sizeBytes image quality status createdAt")
+      .select("_id originalFilename mimeType sizeBytes image quality status createdAt examId studentId matchedAt")
       .lean()
       .exec();
     return NextResponse.json({ scans: scans.map((scan) => ({
@@ -35,6 +35,9 @@ export async function GET(request: Request) {
       quality: scan.quality,
       status: scan.status,
       createdAt: scan.createdAt,
+      examId: scan.examId ? String(scan.examId) : null,
+      studentId: scan.studentId ? String(scan.studentId) : null,
+      matchedAt: scan.matchedAt,
     })) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Scan history request failed", error);
