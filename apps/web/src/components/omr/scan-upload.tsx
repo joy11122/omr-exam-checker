@@ -126,7 +126,8 @@ export function ScanUpload() {
         throw new Error(payload.error || "The image could not be checked.");
       }
       setResult(payload.result);
-      setSavedScanId(payload.scan.id);\n      await loadScans();
+      setSavedScanId(payload.scan.id);
+      await loadScans();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to process this image.");
     } finally {
