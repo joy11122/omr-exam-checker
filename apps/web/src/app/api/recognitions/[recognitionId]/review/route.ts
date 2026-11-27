@@ -53,7 +53,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const currentAnswers = record.answers as unknown as Array<{
       questionNumber: number;
+      detectedAnswer: string | null;
       answer: string;
+      detectionStatus: string;
+      confidence: number;
+      options: Array<{ option: string; fillRatio: number; confidence: number }>;
       edits: Array<{ previousAnswer: string | null; nextAnswer: string; changedBy: mongoose.Types.ObjectId; changedAt: Date }>;
     }>;
     const submitted = parsed.data.answers;
@@ -76,7 +80,15 @@ export async function PATCH(request: Request, context: RouteContext) {
           changedAt: reviewedAt,
         });
       }
-      return { questionNumber: current.questionNumber, answer: next.answer, edits };
+      return {
+        questionNumber: current.questionNumber,
+        detectedAnswer: current.detectedAnswer,
+        answer: next.answer,
+        detectionStatus: current.detectionStatus,
+        confidence: current.confidence,
+        options: current.options,
+        edits,
+      };
     });
 
     const updated = await Recognition.findOneAndUpdate(
