@@ -285,7 +285,14 @@ export function ScanUpload() {
         {!historyLoading && !historyError && scans.length === 0 ? <p className="scan-history-message">No scans yet. Validated answer-sheet images will appear here.</p> : null}
         {scans.length > 0 ? (
           <ul className="scan-history-list">
-            {scans.map((scan) => (
+            {scans.map((scan) => {
+              const linkedExam = matchingOptions.exams.find((exam) => exam.id === scan.examId);
+              const recognitionChoice = recognitionSelection[scan.id];
+              const selectedSubject = linkedExam?.subjects.find((subject) => subject.id === (recognitionChoice?.subjectId ?? linkedExam.subjects[0]?.id));
+              const selectedPage = recognitionChoice?.pageNumber ?? 0;
+              const recognitionPageCount = selectedSubject ? Math.ceil(selectedSubject.questionCount / (linkedExam?.questionsPerPage ?? 40)) : 0;
+              const pageCalibrated = selectedSubject?.calibratedPages.includes(selectedPage) ?? false;
+              return (
               <li key={scan.id} className="scan-history-item">
                 <div className="scan-history-icon"><FileImage size={18} /></div>
                 <div className="scan-history-details">
@@ -318,9 +325,52 @@ export function ScanUpload() {
                       {matchingMessages[scan.id] ? <p className="scan-match-message" role="status">{matchingMessages[scan.id]}</p> : null}
                     </div>
                   </details>
+                  {scan.examId ? (
+                    <div className="scan-recognition-panel">
+                      <strong>Bubble recognition</strong>
+                      {linkedExam && selectedSubject ? (
+                        <>
+                          <label>Subject
+                            <select value={selectedSubject.id} onChange={(event) => setRecognitionSelection((previous) => ({ ...previous, [scan.id]: { subjectId: event.target.value, pageNumber: 0 } }))}>
+                              {linkedExam.subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name} · {subject.questionCount} questions</option>)}
+                            </select>
+                          </label>
+                          <label>Sheet page
+                            <select value={selectedPage} onChange={(event) => setRecognitionSelection((previous) => ({ ...previous, [scan.id]: { subjectId: selectedSubject.id, pageNumber: Number(event.target.value) } }))}>
+                              {Array.from({ length: recognitionPageCount }, (_, page) => <option key={page} value={page}>Page {page + 1}{selectedSubject.calibratedPages.includes(page) ? " · calibrated" : " · not calibrated"}</option>)}
+                            </select>
+                          </label>
+                          <button className="button button-primary" type="button" disabled={!pageCalibrated || recognitionBusy !== null} onClick={() => void handleRecognize(scan.id, selectedSubject.id, selectedPage)}>
+                            {recognitionBusy === scan.id ? "Reading bubbles…" : "Recognize answers"}
+                          </button>
+                          {!pageCalibrated ? <p className="helper-copy">Open this exam’s OMR sheet designer and calibrate the selected subject before recognition.</p> : null}
+                        </>
+                      ) : <p className="helper-copy">Load exam options to continue.</p>}
+                      {recognitionMessages[scan.id] ? <p className="scan-match-message" role="status">{recognitionMessages[scan.id]}</p> : null}
+                      {recognitionResults[scan.id] ? (
+                        <div className="scan-recognition-result" aria-live="polite">
+                          <p>Page {recognitionResults[scan.id].pageNumber + 1} · {recognitionResults[scan.id].result.question_count} questions · {recognitionResults[scan.id].result.status.replace("_", " ")}</p>
+                          <div className="scan-recognition-summary">
+                            {Object.entries(recognitionResults[scan.id].result.summary).map(([status, count]) => <span key={status}>{status}: <strong>{count}</strong></span>)}
+                          </div>
+                          <ol>
+                            {recognitionResults[scan.id].result.questions.map((question) => (
+                              <li key={question.question_number}>
+                                <span>Q{question.question_number}</span>
+                                <strong>{question.answer ?? question.status}</strong>
+                                <small>{Math.round(question.confidence * 100)}% confidence</small>
+                              </li>
+                            ))}
+                          </ol>
+                          <p className="helper-copy">Experimental extraction only. Verify every answer against the original sheet; no marks or grades have been calculated.</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : null}
       </section>
