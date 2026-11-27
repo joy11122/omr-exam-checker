@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LoaderCircle, Ruler, Save, CheckCircle2 } from "lucide-react";
+import { LoaderCircle, Ruler, CheckCircle2 } from "lucide-react";
 
 type BubbleCoordinate = {
   question_number: number;
