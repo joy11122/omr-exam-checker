@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 
     await connectToDatabase();
     const institutionId = new mongoose.Types.ObjectId(institution.institutionId);
-    const existing = await Scan.findOne({ institutionId, sha256 }).lean().exec();
+    const existing = await Scan.findOne({ institutionId, sha256 }).lean().exec() as unknown as { _id: mongoose.Types.ObjectId; status: string; createdAt: Date } | null;
     if (existing) return NextResponse.json({ result: parsed.data, scan: { id: String(existing._id), status: existing.status, createdAt: existing.createdAt }, duplicate: true }, { status: 200, headers: { "Cache-Control": "no-store" } });
 
     const filename = file.name.replaceAll("/", "_").replaceAll(String.fromCharCode(92), "_").slice(0, 180) || "answer-sheet";
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     } catch (error) {
       await deleteScanImage(imageFileId).catch((cleanupError) => console.error("Failed to clean up orphaned OMR image", cleanupError));
       if (error && typeof error === "object" && "code" in error && error.code === 11000) {
-        const duplicate = await Scan.findOne({ institutionId, sha256 }).lean().exec();
+        const duplicate = await Scan.findOne({ institutionId, sha256 }).lean().exec() as unknown as { _id: mongoose.Types.ObjectId; status: string; createdAt: Date } | null;
         if (duplicate) return NextResponse.json({ result: parsed.data, scan: { id: String(duplicate._id), status: duplicate.status, createdAt: duplicate.createdAt }, duplicate: true }, { status: 200, headers: { "Cache-Control": "no-store" } });
       }
       throw error;
