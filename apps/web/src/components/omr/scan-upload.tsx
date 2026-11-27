@@ -23,6 +23,7 @@ export function ScanUpload() {
   const [correcting, setCorrecting] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [registration, setRegistration] = useState<RegistrationResult | null>(null);
+  const [savedScanId, setSavedScanId] = useState<string | null>(null);
 
 
   async function handleDetectMarks() {
@@ -79,6 +80,7 @@ export function ScanUpload() {
     setBusy(true);
     setError("");
     setResult(null);
+    setSavedScanId(null);
     try {
       const formData = new FormData();
       formData.set("file", file);
@@ -86,11 +88,12 @@ export function ScanUpload() {
         method: "POST",
         body: formData,
       });
-      const payload = await response.json() as { result?: IntakeResult; error?: string };
-      if (!response.ok || !payload.result) {
+      const payload = await response.json() as { result?: IntakeResult; scan?: { id: string }; error?: string };
+      if (!response.ok || !payload.result || !payload.scan) {
         throw new Error(payload.error || "The image could not be checked.");
       }
       setResult(payload.result);
+      setSavedScanId(payload.scan.id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to process this image.");
     } finally {
@@ -102,6 +105,7 @@ export function ScanUpload() {
     setFile(event.target.files?.[0] ?? null);
     setError("");
     setResult(null);
+    setSavedScanId(null);
     setRegistration(null);
     setCorrectedUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
   }
@@ -168,6 +172,7 @@ export function ScanUpload() {
             <div><dt>Image contrast</dt><dd>{result.quality.contrast ? "Passed" : "Needs review"}</dd></div>
           </dl>
           <p className="scan-fingerprint">Image fingerprint: <code>{result.sha256}</code></p>
+          {savedScanId ? <p className="scan-disclaimer" role="status">Scan saved privately. Record: <code>{savedScanId}</code></p> : null}
           <p className="scan-disclaimer">Intake and registration-mark alignment are available for review. Bubble recognition, student matching, and grading are not active yet.</p>
           <div className="scan-review-actions">
             <button className="button button-secondary" type="button" onClick={handleDetectMarks} disabled={detecting}>
