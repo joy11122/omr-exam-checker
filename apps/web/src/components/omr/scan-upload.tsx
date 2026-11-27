@@ -20,10 +20,10 @@ type ScanRecord = {
   matchedAt?: string | null;
 };
 
-type ExamOption = { id: string; title: string; examCode: string; status: string };
+type ExamOption = { id: string; title: string; examCode: string; status: string; questionsPerPage: number; subjects: Array<{ id: string; name: string; questionCount: number; calibratedPages: number[] }> };
 type StudentOption = { id: string; name: string; studentCode: string; className: string; rollNumber: string };
 
-type IntakeResult = {
+type BubbleRecognition = { status: string; question_count: number; summary: Record<string, number>; questions: Array<{ question_number: number; answer: string | null; status: string; confidence: number; options: Array<{ option: string; fill_ratio: number; confidence: number }> }> };\n\ntype IntakeResult = {
   status: "accepted" | "review_required";
   stage: "intake_validated";
   sha256: string;
@@ -49,7 +49,7 @@ export function ScanUpload() {
   const [matchingOptions, setMatchingOptions] = useState<{ exams: ExamOption[]; students: StudentOption[] }>({ exams: [], students: [] });
   const [matchingSelection, setMatchingSelection] = useState<Record<string, { examId: string; studentId: string }>>({});
   const [matchingBusy, setMatchingBusy] = useState<string | null>(null);
-  const [matchingMessages, setMatchingMessages] = useState<Record<string, string>>({});
+  const [matchingMessages, setMatchingMessages] = useState<Record<string, string>>({});\n  const [recognitionSelection, setRecognitionSelection] = useState<Record<string, { subjectId: string; pageNumber: number }>>({});\n  const [recognitionBusy, setRecognitionBusy] = useState<string | null>(null);\n  const [recognitionMessages, setRecognitionMessages] = useState<Record<string, string>>({});\n  const [recognitionResults, setRecognitionResults] = useState<Record<string, { pageNumber: number; result: BubbleRecognition }>>({});
 
   const loadScans = useCallback(async () => {
     setHistoryLoading(true);
@@ -100,6 +100,28 @@ export function ScanUpload() {
     } catch (caught) {
       setMatchingMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to match this scan." }));
     } finally { setMatchingBusy(null); }
+  }
+
+
+  async function handleRecognize(scanId: string, subjectId: string, pageNumber: number) {
+    if (!subjectId || recognitionBusy) return;
+    setRecognitionBusy(scanId);
+    setRecognitionMessages((previous) => ({ ...previous, [scanId]: "" }));
+    try {
+      const response = await fetch(`/api/scans/${scanId}/recognize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subjectId, pageNumber }),
+      });
+      const payload = await response.json() as { result?: BubbleRecognition; error?: string };
+      if (!response.ok || !payload.result) throw new Error(payload.error || "Unable to recognize this sheet page.");
+      setRecognitionResults((previous) => ({ ...previous, [scanId]: { pageNumber, result: payload.result! } }));
+      setRecognitionMessages((previous) => ({ ...previous, [scanId]: "Recognition complete. Review every answer before using it." }));
+    } catch (caught) {
+      setRecognitionMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to recognize this sheet page." }));
+    } finally {
+      setRecognitionBusy(null);
+    }
   }
 
   async function handleDetectMarks() {
