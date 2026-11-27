@@ -6,7 +6,7 @@ import { readScanImage } from "@/lib/mongodb/scan-storage";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
-import { Exam, Scan } from "@/models";
+import { Exam, Recognition, Scan } from "@/models";
 
 export const runtime = "nodejs";
 
@@ -120,9 +120,63 @@ export async function POST(request: Request, context: RouteContext) {
     if (!recognition.ok) {
       return NextResponse.json({ error: "The scanning service could not read the calibrated bubble layout." }, { status: recognition.status >= 500 ? 502 : recognition.status });
     }
-    const result: unknown = await recognition.json();
+    const enginePayload: unknown = await recognition.json();
+    const engineResultSchema = z.object({
+      status: z.enum(["recognized", "review_required"]),
+      question_count: z.number().int().min(1).max(80),
+      summary: z.record(z.string(), z.number().int().min(0)),
+      questions: z.array(z.object({
+        question_number: z.number().int().min(1).max(300),
+        answer: z.enum(["A", "B", "C", "D"]).nullable(),
+        status: z.enum(["recognized", "blank", "multiple", "uncertain"]),
+        confidence: z.number().min(0).max(1),
+        options: z.array(z.object({
+          option: z.enum(["A", "B", "C", "D", "E"]),
+          fill_ratio: z.number().min(0).max(1),
+          confidence: z.number().min(0).max(1),
+        })).max(5),
+      })).min(1).max(80),
+    }).strict();
+    const validatedResult = engineResultSchema.safeParse(enginePayload);
+    if (!validatedResult.success || validatedResult.data.questions.length !== expectedBubbleCount / 4) {
+      console.error("OMR engine returned an invalid recognition payload", validatedResult.success ? "question count mismatch" : validatedResult.error.flatten());
+      return NextResponse.json({ error: "The scanning service returned an invalid answer set. Please retry or inspect the image manually." }, { status: 502 });
+    }
+
+    const questionNumbers = validatedResult.data.questions.map((item) => item.question_number);
+    if (new Set(questionNumbers).size !== questionNumbers.length ||
+        questionNumbers.some((number) => number < firstQuestion || number > lastQuestion)) {
+      return NextResponse.json({ error: "The scanning service returned answers outside the calibrated page." }, { status: 502 });
+    }
+
+    const recognitionRecord = await Recognition.create({
+      institutionId,
+      scanId: scan._id,
+      examId: scan.examId,
+      subjectId: new mongoose.Types.ObjectId(parsed.data.subjectId),
+      pageNumber: parsed.data.pageNumber,
+      engineStatus: validatedResult.data.status,
+      summary: validatedResult.data.summary,
+      answers: validatedResult.data.questions.map((item) => ({
+        questionNumber: item.question_number,
+        detectedAnswer: item.answer,
+        answer: item.answer ?? (item.status === "blank" ? "BLANK" : item.status === "multiple" ? "MULTIPLE" : "UNREADABLE"),
+        detectionStatus: item.status,
+        confidence: item.confidence,
+        options: item.options.map((option) => ({
+          option: option.option,
+          fillRatio: option.fill_ratio,
+          confidence: option.confidence,
+        })),
+      })),
+      createdBy: new mongoose.Types.ObjectId(session.user.id),
+      status: "pending_review",
+    });
+
     return NextResponse.json({
-      result,
+      recognitionId: String(recognitionRecord._id),
+      reviewStatus: recognitionRecord.status,
+      result: validatedResult.data,
       calibration: { required: false, subjectId: parsed.data.subjectId, pageNumber: parsed.data.pageNumber, perspectiveCorrected: true },
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
