@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertCircle, Camera, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
@@ -56,7 +57,7 @@ export function ScanUpload() {
   }, []);
 
   useEffect(() => {
-    void loadScans();
+    void Promise.resolve().then(loadScans);
   }, [loadScans]);
 
 
@@ -281,7 +282,7 @@ export function ScanUpload() {
               <p>{registration.status === "detected" ? "All four marks were located. Perspective correction can be attempted." : "Do not continue automatically. Re-capture the full sheet with all four black corner marks visible."}</p>
             </div>
           ) : null}
-          {correctedUrl ? <div className="scan-corrected-preview"><h3>Aligned sheet preview</h3><img src={correctedUrl} alt="Perspective-corrected OMR sheet" /><a href={correctedUrl} download="corrected-omr-sheet.jpg">Download corrected image</a></div> : null}
+          {correctedUrl ? <div className="scan-corrected-preview"><h3>Aligned sheet preview</h3><Image src={correctedUrl} alt="Perspective-corrected OMR sheet" width={1240} height={1754} unoptimized /><a href={correctedUrl} download="corrected-omr-sheet.jpg">Download corrected image</a></div> : null}
         </section>
       ) : null}
     </section>
