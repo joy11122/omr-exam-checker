@@ -53,9 +53,9 @@ def recognize_bubbles(
 
         scores: list[dict[str, Any]] = []
         for item in candidates:
-            cx = int(round(float(item["x"]) * width))
-            cy = int(round(float(item["y"]) * height))
-            radius = max(4, int(round(float(item["radius"]) * min_dimension)))
+            cx = round(float(item["x"]) * width)
+            cy = round(float(item["y"]) * height)
+            radius = max(4, round(float(item["radius"]) * min_dimension))
             x1, x2 = max(0, cx - radius), min(width, cx + radius + 1)
             y1, y2 = max(0, cy - radius), min(height, cy + radius + 1)
             if x1 == 0 or y1 == 0 or x2 == width or y2 == height:
