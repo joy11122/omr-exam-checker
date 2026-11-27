@@ -15,7 +15,13 @@ type ScanRecord = {
   quality: { portrait: boolean; contrast: boolean; status: string };
   status: "intake_validated" | "review_required";
   createdAt: string;
+  examId?: string | null;
+  studentId?: string | null;
+  matchedAt?: string | null;
 };
+
+type ExamOption = { id: string; title: string; examCode: string; status: string };
+type StudentOption = { id: string; name: string; studentCode: string; className: string; rollNumber: string };
 
 type IntakeResult = {
   status: "accepted" | "review_required";
@@ -40,6 +46,10 @@ export function ScanUpload() {
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
+  const [matchingOptions, setMatchingOptions] = useState<{ exams: ExamOption[]; students: StudentOption[] }>({ exams: [], students: [] });
+  const [matchingSelection, setMatchingSelection] = useState<Record<string, { examId: string; studentId: string }>>({});
+  const [matchingBusy, setMatchingBusy] = useState<string | null>(null);
+  const [matchingMessages, setMatchingMessages] = useState<Record<string, string>>({});
 
   const loadScans = useCallback(async () => {
     setHistoryLoading(true);
@@ -56,10 +66,40 @@ export function ScanUpload() {
     }
   }, []);
 
-  useEffect(() => {
-    void Promise.resolve().then(loadScans);
-  }, [loadScans]);
+  const loadMatchingOptions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/scans/matching-options", { cache: "no-store" });
+      const payload = await response.json() as { exams?: ExamOption[]; students?: StudentOption[] };
+      if (response.ok && payload.exams && payload.students) setMatchingOptions({ exams: payload.exams, students: payload.students });
+    } catch {
+      setMatchingOptions({ exams: [], students: [] });
+    }
+  }, []);
 
+  useEffect(() => {
+    void Promise.resolve().then(() => { void loadScans(); void loadMatchingOptions(); });
+  }, [loadScans, loadMatchingOptions]);
+
+
+  async function handleMatchScan(scanId: string) {
+    const selection = matchingSelection[scanId];
+    const examId = selection?.examId;
+    if (!examId || matchingBusy) return;
+    setMatchingBusy(scanId);
+    setMatchingMessages((previous) => ({ ...previous, [scanId]: "" }));
+    try {
+      const response = await fetch(`/api/scans/${scanId}/match`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examId, studentId: selection.studentId || null }),
+      });
+      const payload = await response.json() as { exam?: { title: string; examCode: string }; error?: string };
+      if (!response.ok || !payload.exam) throw new Error(payload.error || "Unable to match this scan.");
+      setMatchingMessages((previous) => ({ ...previous, [scanId]: `Matched to ${payload.exam?.title} (${payload.exam?.examCode}).` }));
+      await loadScans();
+    } catch (caught) {
+      setMatchingMessages((previous) => ({ ...previous, [scanId]: caught instanceof Error ? caught.message : "Unable to match this scan." }));
+    } finally { setMatchingBusy(null); }
+  }
 
   async function handleDetectMarks() {
     if (!file || detecting) return;
@@ -232,7 +272,30 @@ export function ScanUpload() {
                     {scan.status === "intake_validated" ? "Intake validated" : "Review required"}
                   </span>
                 </div>
-                <a className="scan-history-open" href={`/api/scans/${scan.id}/image`} target="_blank" rel="noreferrer" aria-label={`Open private scan image: ${scan.filename}`}>View image</a>
+                <div className="scan-history-actions">
+                  <a className="scan-history-open" href={`/api/scans/${scan.id}/image`} target="_blank" rel="noreferrer" aria-label={`Open private scan image: ${scan.filename}`}>View image</a>
+                  <details className="scan-match-details">
+                    <summary>{scan.examId ? "Update match" : "Match to exam"}</summary>
+                    <div className="scan-match-form">
+                      <label>Exam
+                        <select value={matchingSelection[scan.id]?.examId ?? scan.examId ?? ""} onChange={(event) => setMatchingSelection((previous) => ({ ...previous, [scan.id]: { examId: event.target.value, studentId: previous[scan.id]?.studentId ?? scan.studentId ?? "" } }))}>
+                          <option value="">Choose an exam</option>
+                          {matchingOptions.exams.map((exam) => <option key={exam.id} value={exam.id}>{exam.title} · {exam.examCode}</option>)}
+                        </select>
+                      </label>
+                      <label>Student (optional)
+                        <select value={matchingSelection[scan.id]?.studentId ?? scan.studentId ?? ""} onChange={(event) => setMatchingSelection((previous) => ({ ...previous, [scan.id]: { examId: previous[scan.id]?.examId ?? scan.examId ?? "", studentId: event.target.value } }))}>
+                          <option value="">Not assigned yet</option>
+                          {matchingOptions.students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.studentCode}{student.rollNumber ? ` · Roll ${student.rollNumber}` : ""}</option>)}
+                        </select>
+                      </label>
+                      <button className="button button-primary" type="button" disabled={!(matchingSelection[scan.id]?.examId ?? scan.examId) || matchingBusy !== null} onClick={() => void handleMatchScan(scan.id)}>
+                        {matchingBusy === scan.id ? "Saving…" : "Save match"}
+                      </button>
+                      {matchingMessages[scan.id] ? <p className="scan-match-message" role="status">{matchingMessages[scan.id]}</p> : null}
+                    </div>
+                  </details>
+                </div>
               </li>
             ))}
           </ul>
