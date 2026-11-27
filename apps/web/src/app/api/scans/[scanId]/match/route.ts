@@ -12,8 +12,8 @@ export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ scanId: string }> };
 
 const matchSchema = z.object({
-  examId: z.string().regex(/^[a-f\\d]{24}$/i, "Choose a valid exam."),
-  studentId: z.string().regex(/^[a-f\\d]{24}$/i).nullable().optional(),
+  examId: z.string().regex(/^[a-f0-9]{24}$/i, "Choose a valid exam."),
+  studentId: z.string().regex(/^[a-f0-9]{24}$/i).nullable().optional(),
 });
 
 export async function PATCH(request: Request, context: RouteContext) {
