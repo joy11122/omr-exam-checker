@@ -34,6 +34,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!institution) return NextResponse.json({ error: "Institution not found." }, { status: 403 });
     await requireInstitutionRole(institution.institutionId, "examiner");
 
+    const declaredLength = Number(request.headers.get("content-length") ?? 0);
+    if (declaredLength > 32 * 1024) {
+      return NextResponse.json({ error: "The answer review request is too large." }, { status: 413 });
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = reviewSchema.safeParse(body);
     if (!parsed.success) {
