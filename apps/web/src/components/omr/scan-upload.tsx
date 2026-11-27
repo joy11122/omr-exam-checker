@@ -321,7 +321,7 @@ export function ScanUpload() {
           </dl>
           <p className="scan-fingerprint">Image fingerprint: <code>{result.sha256}</code></p>
           {savedScanId ? <p className="scan-disclaimer" role="status">Scan saved privately. Record: <code>{savedScanId}</code></p> : null}
-          <p className="scan-disclaimer">Intake and registration-mark alignment are available for review. Bubble recognition, student matching, and grading are not active yet.</p>
+          <p className="scan-disclaimer">Image intake, registration-mark inspection, perspective correction, and manual exam/student matching are available. Bubble recognition and automated grading are not active yet.</p>
           <div className="scan-review-actions">
             <button className="button button-secondary" type="button" onClick={handleDetectMarks} disabled={detecting}>
               {detecting ? <><LoaderCircle className="spin" size={16} /> Checking marks…</> : "Inspect registration marks"}
