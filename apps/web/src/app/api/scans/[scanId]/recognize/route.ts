@@ -12,31 +12,10 @@ export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ scanId: string }> };
 
-const bubbleLayoutSchema = z.object({
+const recognitionRequestSchema = z.object({
   subjectId: z.string().regex(/^[a-f0-9]{24}$/i),
-  bubbles: z.array(z.object({
-    question_number: z.number().int().min(1).max(300),
-    option: z.enum(["A", "B", "C", "D"]),
-    x: z.number().min(0).max(1),
-    y: z.number().min(0).max(1),
-    radius: z.number().min(0.003).max(0.05),
-  }).strict()).min(4).max(1200),
-}).strict().superRefine((layout, context) => {
-  const groups = new Map<number, Set<string>>();
-  for (const bubble of layout.bubbles) {
-    const options = groups.get(bubble.question_number) ?? new Set<string>();
-    if (options.has(bubble.option)) {
-      context.addIssue({ code: "custom", message: "Duplicate option in question layout." });
-    }
-    options.add(bubble.option);
-    groups.set(bubble.question_number, options);
-  }
-  for (const options of groups.values()) {
-    if (options.size !== 4) {
-      context.addIssue({ code: "custom", message: "Every question must have A, B, C and D bubbles." });
-    }
-  }
-});
+  pageNumber: z.number().int().min(0).max(14),
+}).strict();
 
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -56,10 +35,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > 256 * 1024) {
-      return NextResponse.json({ error: "The calibration layout is too large." }, { status: 413 });
+      return NextResponse.json({ error: "The recognition request is too large." }, { status: 413 });
     }
     const body = await request.json().catch(() => null);
-    const parsed = bubbleLayoutSchema.safeParse(body);
+    const parsed = recognitionRequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Provide a valid calibrated A–D bubble layout." }, { status: 400 });
     }
@@ -81,14 +60,23 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const exam = await Exam.findOne({ _id: scan.examId, institutionId })
-      .select("subjects")
+      .select("subjects sheetSettings")
       .lean()
-      .exec() as unknown as { subjects: Array<{ _id: mongoose.Types.ObjectId; questionCount: number }> } | null;
+      .exec() as unknown as { subjects: Array<{ _id: mongoose.Types.ObjectId; questionCount: number; bubbleLayouts?: Array<{ pageNumber: number; bubbles: Array<{ question_number: number; option: string; x: number; y: number; radius: number }> }> }>; sheetSettings?: { questionsPerPage?: number } } | null;
     if (!exam) return NextResponse.json({ error: "The matched exam is unavailable." }, { status: 404 });
     const subject = exam.subjects.find((item) => String(item._id) === parsed.data.subjectId);
     if (!subject) return NextResponse.json({ error: "Choose a subject from the matched exam." }, { status: 404 });
-    if (parsed.data.bubbles.some((bubble) => bubble.question_number > subject.questionCount)) {
-      return NextResponse.json({ error: "The layout contains a question outside this subject." }, { status: 400 });
+    const pageLayout = subject.bubbleLayouts?.find((item) => item.pageNumber === parsed.data.pageNumber);
+    if (!pageLayout?.bubbles?.length) {
+      return NextResponse.json({ error: "Calibrate this subject's printed template before recognizing answers." }, { status: 409 });
+    }
+    const questionsPerPage = exam.sheetSettings?.questionsPerPage ?? 40;
+    const firstQuestion = parsed.data.pageNumber * questionsPerPage + 1;
+    const lastQuestion = Math.min(subject.questionCount, firstQuestion + questionsPerPage - 1);
+    const expectedBubbleCount = (lastQuestion - firstQuestion + 1) * 4;
+    if (pageLayout.bubbles.length !== expectedBubbleCount ||
+        pageLayout.bubbles.some((bubble) => bubble.question_number < firstQuestion || bubble.question_number > lastQuestion)) {
+      return NextResponse.json({ error: "The saved calibration does not match this exam's current sheet settings." }, { status: 409 });
     }
 
     const image = await readScanImage(String(scan.imageFileId));
@@ -121,7 +109,7 @@ export async function POST(request: Request, context: RouteContext) {
     const correctedBytes = await correction.arrayBuffer();
     const recognitionForm = new FormData();
     recognitionForm.set("file", new Blob([correctedBytes], { type: "image/jpeg" }), "corrected-sheet.jpg");
-    recognitionForm.set("layout", JSON.stringify({ bubbles: parsed.data.bubbles }));
+    recognitionForm.set("layout", JSON.stringify({ bubbles: pageLayout.bubbles }));
     const recognition = await fetch(new URL("/v1/scans/bubbles", engineUrl), {
       method: "POST",
       headers,
@@ -135,7 +123,7 @@ export async function POST(request: Request, context: RouteContext) {
     const result: unknown = await recognition.json();
     return NextResponse.json({
       result,
-      calibration: { required: true, subjectId: parsed.data.subjectId, perspectiveCorrected: true },
+      calibration: { required: false, subjectId: parsed.data.subjectId, pageNumber: parsed.data.pageNumber, perspectiveCorrected: true },
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") {
