@@ -61,6 +61,19 @@ const answerSchema = new Schema({
   option: { type: String, required: true, enum: ["A", "B", "C", "D"] },
 }, { _id: false });
 
+const bubbleCoordinateSchema = new Schema({
+  question_number: { type: Number, required: true, min: 1, max: 300 },
+  option: { type: String, required: true, enum: ["A", "B", "C", "D"] },
+  x: { type: Number, required: true, min: 0, max: 1 },
+  y: { type: Number, required: true, min: 0, max: 1 },
+  radius: { type: Number, required: true, min: 0.003, max: 0.05 },
+}, { _id: false });
+
+const bubblePageLayoutSchema = new Schema({
+  pageNumber: { type: Number, required: true, min: 0, max: 14 },
+  bubbles: { type: [bubbleCoordinateSchema], required: true, validate: [(value: unknown[]) => value.length >= 4 && value.length <= 320, "A calibrated page must contain 4–320 bubbles"] },
+}, { _id: false });
+
 const examSubjectSchema = new Schema({
   name: { type: String, required: true, trim: true, maxlength: 80 },
   questionCount: { type: Number, required: true, min: 1, max: 300 },
@@ -68,6 +81,7 @@ const examSubjectSchema = new Schema({
   negativeMarksPerQuestion: { type: Number, required: true, min: 0, max: 100, default: 0 },
   answerKey: { type: [answerSchema], default: [] },
   answerKeyUpdatedAt: { type: Date, default: null },
+  bubbleLayouts: { type: [bubblePageLayoutSchema], default: [] },
 });
 
 const examSchema = new Schema({
