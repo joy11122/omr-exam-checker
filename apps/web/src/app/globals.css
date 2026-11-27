@@ -243,7 +243,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .omr-print-summary strong { font-size: 12px; }
 .omr-print-summary span { color: var(--muted); font-size: 10px; }
 .omr-print-stage { display: grid; justify-items: center; gap: 22px; margin-top: 25px; }
-.omr-paper { position: relative; display: flex; width: 210mm; min-height: 297mm; flex-direction: column; gap: 12px; padding: 15mm 14mm 13mm; overflow: hidden; background: #fff; color: #111; box-shadow: 0 4px 24px rgb(20 24 35 / 12%); font-family: Arial, Helvetica, sans-serif; }
+.omr-paper { position: relative; display: flex; width: 210mm; height: 297mm; min-height: 297mm; flex-direction: column; gap: 12px; padding: 15mm 14mm 13mm; overflow: hidden; background: #fff; color: #111; box-shadow: 0 4px 24px rgb(20 24 35 / 12%); font-family: Arial, Helvetica, sans-serif; }
 .omr-registration { position: absolute; width: 7mm; height: 7mm; background: #000; }
 .omr-registration.top-left { top: 5mm; left: 5mm; }
 .omr-registration.top-right { top: 5mm; right: 5mm; }
@@ -394,4 +394,27 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .scan-history-actions { grid-column: 2; }
   .scan-match-details { width: 100%; }
   .scan-match-form .button { width: 100%; }
+}
+
+
+/* Phase 5: calibrated bubble recognition */
+.omr-calibration-control { display: grid; justify-items: start; gap: 7px; min-width: 220px; }
+.omr-calibration-message { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--danger); font-size: 10px; line-height: 1.5; }
+.omr-calibration-message.is-saved { color: var(--success); }
+.scan-recognition-panel { display: grid; width: min(100%, 340px); gap: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); }
+.scan-recognition-panel > strong { font-size: 12px; }
+.scan-recognition-panel label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 650; }
+.scan-recognition-panel select { width: 100%; min-width: 0; padding: 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.scan-recognition-result { display: grid; gap: 8px; padding-top: 9px; border-top: 1px solid var(--line); }
+.scan-recognition-result > p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.scan-recognition-summary { display: flex; flex-wrap: wrap; gap: 6px; }
+.scan-recognition-summary span { padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 9px; }
+.scan-recognition-result ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; max-height: 230px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+.scan-recognition-result li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px; padding: 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.scan-recognition-result li span, .scan-recognition-result li small { color: var(--muted); font-size: 9px; }
+.scan-recognition-result li strong { font-size: 10px; text-align: center; text-transform: uppercase; }
+@media (max-width: 600px) {
+  .scan-recognition-panel { width: 100%; }
+  .omr-calibration-control { min-width: 0; width: 100%; }
+  .omr-print-summary { align-items: flex-start; flex-direction: column; }
 }
