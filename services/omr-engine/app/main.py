@@ -4,11 +4,11 @@ import os
 from io import BytesIO
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel
 
-from app.registration import detect_registration_marks
+from app.registration import correct_perspective, detect_registration_marks
 
 app = FastAPI(
     title="OMR Engine",
@@ -145,3 +145,50 @@ async def locate_registration_marks(
 ) -> dict:
     _, image = await read_upload(file)
     return detect_registration_marks(image)
+
+
+
+@app.post(
+    "/v1/scans/perspective-correction",
+    response_class=Response,
+    tags=["scans"],
+    dependencies=[Depends(require_service_key)],
+)
+async def correct_scan_perspective(
+    file: Annotated[UploadFile, File(description="A photographed or scanned A4 OMR answer sheet")],
+) -> Response:
+    _, image = await read_upload(file)
+    detection = detect_registration_marks(image)
+    if detection["status"] != "detected":
+        raise HTTPException(
+            status_code=422,
+            detail="All four registration marks must be visible. Adjust the sheet and try again.",
+        )
+    if detection["minimum_confidence"] is None or detection["minimum_confidence"] < 0.7:
+        raise HTTPException(
+            status_code=422,
+            detail="Registration marks are unclear. Use manual alignment before correction.",
+        )
+
+    try:
+        corrected = correct_perspective(image, detection["marks"])
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="The sheet corners do not form a reliable page outline.",
+        ) from None
+
+    output = BytesIO()
+    corrected.save(output, format="JPEG", quality=92, optimize=True)
+    return Response(
+        content=output.getvalue(),
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-store",
+            "X-OMR-Status": "corrected",
+            "X-OMR-Width": str(corrected.width),
+            "X-OMR-Height": str(corrected.height),
+            "X-OMR-Registration-Marks": str(detection["detected_count"]),
+            "X-OMR-Minimum-Confidence": str(detection["minimum_confidence"]),
+        },
+    )
