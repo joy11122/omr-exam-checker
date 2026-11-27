@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         pageNumber: number;
         engineStatus: string;
         summary: Record<string, number>;
-        answers: Array<{ questionNumber: number; detectedAnswer: string | null; answer: string; detectionStatus: string; confidence: number; options: Array<{ option: string; fillRatio: number; confidence: number }> }>;
+        answers: Array<{ questionNumber: number; detectedAnswer: string | null; answer: string; detectionStatus: string; confidence: number; options: Array<{ option: string; fillRatio: number; confidence: number }>; edits: Array<{ previousAnswer: string | null; nextAnswer: string; changedBy: mongoose.Types.ObjectId; changedAt: Date }> }>;
         status: string;
         createdAt: Date;
         reviewedAt: Date | null;
@@ -80,6 +80,7 @@ export async function GET(request: Request) {
               fill_ratio: option.fillRatio,
               confidence: option.confidence,
             })),
+            edits: answer.edits.map((edit) => ({ previousAnswer: edit.previousAnswer, nextAnswer: edit.nextAnswer, changedBy: String(edit.changedBy), changedAt: edit.changedAt })),
           })),
           reviewAnswers: latest.answers.map((answer) => ({
             questionNumber: answer.questionNumber,
