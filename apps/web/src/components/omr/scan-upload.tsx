@@ -3,6 +3,8 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
+type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
+
 type IntakeResult = {
   status: "accepted" | "review_required";
   stage: "intake_validated";
@@ -19,7 +21,28 @@ export function ScanUpload() {
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [correctedUrl, setCorrectedUrl] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [registration, setRegistration] = useState<RegistrationResult | null>(null);
 
+
+  async function handleDetectMarks() {
+    if (!file || detecting) return;
+    setDetecting(true);
+    setError("");
+    setRegistration(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await fetch("/api/scans/registration-marks", { method: "POST", body: formData });
+      const payload = await response.json() as { result?: RegistrationResult; error?: string };
+      if (!response.ok || !payload.result) throw new Error(payload.error || "Unable to inspect registration marks.");
+      setRegistration(payload.result);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to inspect registration marks.");
+    } finally {
+      setDetecting(false);
+    }
+  }
 
   async function handleCorrect() {
     if (!file || correcting) return;
@@ -79,6 +102,7 @@ export function ScanUpload() {
     setFile(event.target.files?.[0] ?? null);
     setError("");
     setResult(null);
+    setRegistration(null);
     setCorrectedUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
   }
 
@@ -145,9 +169,29 @@ export function ScanUpload() {
           </dl>
           <p className="scan-fingerprint">Image fingerprint: <code>{result.sha256}</code></p>
           <p className="scan-disclaimer">Intake and registration-mark alignment are available for review. Bubble recognition, student matching, and grading are not active yet.</p>
-          <button className="button button-primary" type="button" onClick={handleCorrect} disabled={correcting}>
+          <div className="scan-review-actions">
+            <button className="button button-secondary" type="button" onClick={handleDetectMarks} disabled={detecting}>
+              {detecting ? <><LoaderCircle className="spin" size={16} /> Checking marks…</> : "Inspect registration marks"}
+            </button>
+            <button className="button button-primary" type="button" onClick={handleCorrect} disabled={correcting}>
             {correcting ? <><LoaderCircle className="spin" size={16} /> Aligning sheet…</> : "Correct perspective"}
-          </button>
+            </button>
+          </div>
+          {registration ? (
+            <div className="scan-registration-review" aria-live="polite">
+              <h3>Registration mark review</h3>
+              <p>{registration.detected_count} of {registration.expected_count} corner marks detected · {registration.minimum_confidence === null ? "Confidence unavailable" : `Minimum confidence ${Math.round(registration.minimum_confidence * 100)}%`}</p>
+              <ul>
+                {(["top_left", "top_right", "bottom_left", "bottom_right"] as const).map((corner) => (
+                  <li key={corner}>
+                    <span>{corner.replace("_", " ")}</span>
+                    <strong>{registration.marks[corner] ? `Detected · ${Math.round(registration.marks[corner].confidence * 100)}%` : "Missing — manual review"}</strong>
+                  </li>
+                ))}
+              </ul>
+              <p>{registration.status === "detected" ? "All four marks were located. Perspective correction can be attempted." : "Do not continue automatically. Re-capture the full sheet with all four black corner marks visible."}</p>
+            </div>
+          ) : null}
           {correctedUrl ? <div className="scan-corrected-preview"><h3>Aligned sheet preview</h3><img src={correctedUrl} alt="Perspective-corrected OMR sheet" /><a href={correctedUrl} download="corrected-omr-sheet.jpg">Download corrected image</a></div> : null}
         </section>
       ) : null}
