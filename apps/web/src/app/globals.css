@@ -439,3 +439,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .scan-review-answers ol { grid-template-columns: 1fr 1fr; max-height: 360px; }
   .scan-review-answers > .button { width: 100%; }
 }
+
+.scan-review-answers li .scan-answer-audit { display: grid; gap: 3px; color: var(--ink); font-size: 9px; line-height: 1.45; overflow-wrap: anywhere; }
+.scan-review-answers li .scan-answer-audit span { display: block; padding-top: 3px; border-top: 1px dashed var(--line); }
