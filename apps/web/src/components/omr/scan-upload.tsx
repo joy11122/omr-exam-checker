@@ -18,6 +18,7 @@ type ScanRecord = {
   examId?: string | null;
   studentId?: string | null;
   matchedAt?: string | null;
+  latestRecognition?: { id: string; pageNumber: number; engineStatus: string; summary: Record<string, number>; status: string; answers: RecognizedQuestion[]; reviewAnswers: Array<{ questionNumber: number; answer: ReviewAnswerValue }> } | null;
 };
 
 type ExamOption = { id: string; title: string; examCode: string; status: string; questionsPerPage: number; subjects: Array<{ id: string; name: string; questionCount: number; calibratedPages: number[] }> };
@@ -70,6 +71,13 @@ export function ScanUpload() {
       const payload = await response.json() as { scans?: ScanRecord[]; error?: string };
       if (!response.ok || !payload.scans) throw new Error(payload.error || "Unable to load scan history.");
       setScans(payload.scans);
+      setRecognitionResults(Object.fromEntries(payload.scans.flatMap((scan) => scan.latestRecognition ? [[scan.id, {
+        recognitionId: scan.latestRecognition.id,
+        pageNumber: scan.latestRecognition.pageNumber,
+        result: { status: scan.latestRecognition.engineStatus, question_count: scan.latestRecognition.answers.length, summary: scan.latestRecognition.summary, questions: scan.latestRecognition.answers },
+        answers: scan.latestRecognition.reviewAnswers,
+        reviewed: scan.latestRecognition.status === "reviewed",
+      }]] : [])));
     } catch (caught) {
       setHistoryError(caught instanceof Error ? caught.message : "Unable to load scan history.");
     } finally {
