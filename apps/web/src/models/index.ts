@@ -133,6 +133,49 @@ const scanSchema = new Schema({
 scanSchema.index({ institutionId: 1, sha256: 1 }, { unique: true });
 scanSchema.index({ institutionId: 1, createdAt: -1 });
 
+
+const recognitionOptionSchema = new Schema({
+  option: { type: String, required: true, enum: ["A", "B", "C", "D", "E"] },
+  fillRatio: { type: Number, required: true, min: 0, max: 1 },
+  confidence: { type: Number, required: true, min: 0, max: 1 },
+}, { _id: false });
+
+const recognitionEditSchema = new Schema({
+  previousAnswer: { type: String, enum: ["A", "B", "C", "D", "BLANK", "MULTIPLE", "UNREADABLE", null], default: null },
+  nextAnswer: { type: String, required: true, enum: ["A", "B", "C", "D", "BLANK", "MULTIPLE", "UNREADABLE"] },
+  changedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  changedAt: { type: Date, required: true },
+}, { _id: false });
+
+const recognitionAnswerSchema = new Schema({
+  questionNumber: { type: Number, required: true, min: 1, max: 300 },
+  detectedAnswer: { type: String, enum: ["A", "B", "C", "D", "E", null], default: null },
+  answer: { type: String, enum: ["A", "B", "C", "D", "BLANK", "MULTIPLE", "UNREADABLE"], required: true },
+  detectionStatus: { type: String, required: true, enum: ["recognized", "blank", "multiple", "uncertain"] },
+  confidence: { type: Number, required: true, min: 0, max: 1 },
+  options: { type: [recognitionOptionSchema], default: [] },
+  edits: { type: [recognitionEditSchema], default: [] },
+}, { _id: false });
+
+const recognitionSchema = new Schema({
+  institutionId: { type: Schema.Types.ObjectId, ref: "Institution", required: true, index: true },
+  scanId: { type: Schema.Types.ObjectId, ref: "Scan", required: true, index: true },
+  examId: { type: Schema.Types.ObjectId, ref: "Exam", required: true, index: true },
+  subjectId: { type: Schema.Types.ObjectId, required: true },
+  pageNumber: { type: Number, required: true, min: 0, max: 14 },
+  engineStatus: { type: String, required: true, enum: ["recognized", "review_required"] },
+  summary: { type: Schema.Types.Mixed, required: true },
+  answers: { type: [recognitionAnswerSchema], required: true, validate: [(value: unknown[]) => value.length > 0 && value.length <= 80, "A recognition record must contain 1–80 answers"] },
+  status: { type: String, enum: ["pending_review", "reviewed"], default: "pending_review", index: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  reviewedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  reviewedAt: { type: Date, default: null },
+}, { timestamps: true, collection: "omr_recognitions" });
+recognitionSchema.index({ institutionId: 1, scanId: 1, createdAt: -1 });
+recognitionSchema.index({ institutionId: 1, examId: 1, subjectId: 1, pageNumber: 1 });
+
+export const Recognition = mongoose.models.Recognition ?? mongoose.model("Recognition", recognitionSchema);
+
 export const Scan = mongoose.models.Scan ?? mongoose.model("Scan", scanSchema);
 
 export const User = mongoose.models.User ?? mongoose.model("User", userSchema);
