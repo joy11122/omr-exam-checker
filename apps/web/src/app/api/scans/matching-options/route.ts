@@ -20,11 +20,11 @@ export async function GET() {
     await connectToDatabase();
     const institutionId = new mongoose.Types.ObjectId(institution.institutionId);
     const [exams, students] = await Promise.all([
-      Exam.find({ institutionId }).sort({ createdAt: -1 }).limit(100).select("_id title examCode status subjects.name subjects.questionCount subjects.bubbleLayouts.pageNumber").lean().exec(),
+      Exam.find({ institutionId }).sort({ createdAt: -1 }).limit(100).select("_id title examCode status sheetSettings.questionsPerPage subjects.name subjects.questionCount subjects.bubbleLayouts.pageNumber").lean().exec(),
       Student.find({ institutionId, status: "active" }).sort({ fullName: 1 }).limit(300).select("_id fullName studentCode className rollNumber").lean().exec(),
     ]);
     return NextResponse.json({
-      exams: exams.map((exam) => ({ id: String(exam._id), title: exam.title, examCode: exam.examCode, status: exam.status, subjects: exam.subjects.map((subject) => ({ id: String(subject._id), name: subject.name, questionCount: subject.questionCount, calibratedPages: (subject.bubbleLayouts ?? []).map((page) => page.pageNumber) })) })),
+      exams: exams.map((exam) => ({ id: String(exam._id), title: exam.title, examCode: exam.examCode, status: exam.status, questionsPerPage: exam.sheetSettings?.questionsPerPage ?? 40, subjects: exam.subjects.map((subject) => ({ id: String(subject._id), name: subject.name, questionCount: subject.questionCount, calibratedPages: (subject.bubbleLayouts ?? []).map((page) => page.pageNumber) })) })),
       students: students.map((student) => ({ id: String(student._id), name: student.fullName, studentCode: student.studentCode, className: student.className, rollNumber: student.rollNumber })),
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
