@@ -332,3 +332,20 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .scan-result-grid { grid-template-columns: 1fr 1fr; }
   .scan-result-panel .management-panel-heading { align-items: flex-start; flex-direction: column; }
 }
+
+.scan-review-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+.scan-registration-review { margin-top: 16px; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-soft); }
+.scan-registration-review h3, .scan-corrected-preview h3 { margin: 0 0 7px; font-size: 13px; letter-spacing: -.01em; }
+.scan-registration-review p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.scan-registration-review ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; padding: 0; list-style: none; }
+.scan-registration-review li { display: grid; gap: 5px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.scan-registration-review li span { color: var(--muted); font-size: 10px; text-transform: capitalize; }
+.scan-registration-review li strong { font-size: 10px; line-height: 1.5; }
+.scan-corrected-preview { display: grid; justify-items: start; gap: 10px; margin-top: 16px; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.scan-corrected-preview img { display: block; width: min(100%, 460px); max-height: 620px; object-fit: contain; border: 1px solid var(--line); border-radius: 7px; background: white; }
+.scan-corrected-preview a { color: var(--ink); font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .scan-review-actions { display: grid; grid-template-columns: 1fr; }
+  .scan-review-actions .button { width: 100%; }
+  .scan-registration-review ul { grid-template-columns: 1fr; }
+}
