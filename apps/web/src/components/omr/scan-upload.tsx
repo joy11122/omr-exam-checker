@@ -18,6 +18,35 @@ export function ScanUpload() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<IntakeResult | null>(null);\n  const [correctedUrl, setCorrectedUrl] = useState<string | null>(null);\n  const [correcting, setCorrecting] = useState(false);
 
+
+  async function handleCorrect() {
+    if (!file || correcting) return;
+    setCorrecting(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await fetch("/api/scans/perspective-correction", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error || "The sheet needs manual alignment.");
+      }
+      const imageBlob = await response.blob();
+      const nextUrl = URL.createObjectURL(imageBlob);
+      setCorrectedUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return nextUrl;
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to correct this image.");
+    } finally {
+      setCorrecting(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file || busy) return;
@@ -48,6 +77,7 @@ export function ScanUpload() {
     setFile(event.target.files?.[0] ?? null);
     setError("");
     setResult(null);
+    setCorrectedUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
   }
 
   return (
