@@ -81,16 +81,17 @@ export function ScanUpload() {
   }, [loadScans, loadMatchingOptions]);
 
 
-  async function handleMatchScan(scanId: string) {
+  async function handleMatchScan(scanId: string, existingExamId?: string | null, existingStudentId?: string | null) {
     const selection = matchingSelection[scanId];
-    const examId = selection?.examId;
+    const examId = selection?.examId ?? existingExamId ?? "";
+    const studentId = selection?.studentId ?? existingStudentId ?? "";
     if (!examId || matchingBusy) return;
     setMatchingBusy(scanId);
     setMatchingMessages((previous) => ({ ...previous, [scanId]: "" }));
     try {
       const response = await fetch(`/api/scans/${scanId}/match`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ examId, studentId: selection.studentId || null }),
+        body: JSON.stringify({ examId, studentId: studentId || null }),
       });
       const payload = await response.json() as { exam?: { title: string; examCode: string }; error?: string };
       if (!response.ok || !payload.exam) throw new Error(payload.error || "Unable to match this scan.");
@@ -289,7 +290,7 @@ export function ScanUpload() {
                           {matchingOptions.students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.studentCode}{student.rollNumber ? ` · Roll ${student.rollNumber}` : ""}</option>)}
                         </select>
                       </label>
-                      <button className="button button-primary" type="button" disabled={!(matchingSelection[scan.id]?.examId ?? scan.examId) || matchingBusy !== null} onClick={() => void handleMatchScan(scan.id)}>
+                      <button className="button button-primary" type="button" disabled={!(matchingSelection[scan.id]?.examId ?? scan.examId) || matchingBusy !== null} onClick={() => void handleMatchScan(scan.id, scan.examId, scan.studentId)}>
                         {matchingBusy === scan.id ? "Saving…" : "Save match"}
                       </button>
                       {matchingMessages[scan.id] ? <p className="scan-match-message" role="status">{matchingMessages[scan.id]}</p> : null}
