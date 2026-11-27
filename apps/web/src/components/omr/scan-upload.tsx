@@ -1,9 +1,20 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
+
+type ScanRecord = {
+  id: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  image: { format: string; width: number; height: number };
+  quality: { portrait: boolean; contrast: boolean; status: string };
+  status: "intake_validated" | "review_required";
+  createdAt: string;
+};
 
 type IntakeResult = {
   status: "accepted" | "review_required";
@@ -24,6 +35,28 @@ export function ScanUpload() {
   const [detecting, setDetecting] = useState(false);
   const [registration, setRegistration] = useState<RegistrationResult | null>(null);
   const [savedScanId, setSavedScanId] = useState<string | null>(null);
+  const [scans, setScans] = useState<ScanRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+
+  async function loadScans() {
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const response = await fetch("/api/scans?limit=25", { cache: "no-store" });
+      const payload = await response.json() as { scans?: ScanRecord[]; error?: string };
+      if (!response.ok || !payload.scans) throw new Error(payload.error || "Unable to load scan history.");
+      setScans(payload.scans);
+    } catch (caught) {
+      setHistoryError(caught instanceof Error ? caught.message : "Unable to load scan history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadScans();
+  }, []);
 
 
   async function handleDetectMarks() {
@@ -93,7 +126,7 @@ export function ScanUpload() {
         throw new Error(payload.error || "The image could not be checked.");
       }
       setResult(payload.result);
-      setSavedScanId(payload.scan.id);
+      setSavedScanId(payload.scan.id);\n      await loadScans();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to process this image.");
     } finally {
@@ -153,6 +186,38 @@ export function ScanUpload() {
           </button>
         </form>
       </div>
+
+      <section className="management-panel scan-history-panel" aria-labelledby="scan-history-title">
+        <div className="management-panel-heading">
+          <div>
+            <h2 id="scan-history-title">Recent scans</h2>
+            <p>Private image records belonging to your active institution.</p>
+          </div>
+          <button className="button button-secondary scan-history-refresh" type="button" onClick={() => void loadScans()} disabled={historyLoading}>
+            {historyLoading ? <><LoaderCircle className="spin" size={15} /> Loading…</> : "Refresh"}
+          </button>
+        </div>
+        {historyError ? <p className="form-alert error" role="alert">{historyError}</p> : null}
+        {historyLoading && scans.length === 0 ? <p className="scan-history-message" role="status">Loading scan history…</p> : null}
+        {!historyLoading && !historyError && scans.length === 0 ? <p className="scan-history-message">No scans yet. Validated answer-sheet images will appear here.</p> : null}
+        {scans.length > 0 ? (
+          <ul className="scan-history-list">
+            {scans.map((scan) => (
+              <li key={scan.id} className="scan-history-item">
+                <div className="scan-history-icon"><FileImage size={18} /></div>
+                <div className="scan-history-details">
+                  <strong title={scan.filename}>{scan.filename}</strong>
+                  <span>{scan.image.width} × {scan.image.height}px · {(scan.sizeBytes / (1024 * 1024)).toFixed(2)} MB · {new Date(scan.createdAt).toLocaleString()}</span>
+                  <span className={`scan-history-status ${scan.status === "intake_validated" ? "is-validated" : "is-review"}`}>
+                    {scan.status === "intake_validated" ? "Intake validated" : "Review required"}
+                  </span>
+                </div>
+                <a className="scan-history-open" href={`/api/scans/${scan.id}/image`} target="_blank" rel="noreferrer" aria-label={`Open private scan image: ${scan.filename}`}>View image</a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
 
       {result ? (
         <section className="management-panel scan-result-panel" aria-live="polite">
