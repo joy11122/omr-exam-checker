@@ -23,7 +23,7 @@ export default async function BillingPage({ searchParams }: Props) {
   const [usage, memberships, subscription] = await Promise.all([
     getInstitutionUsage(current.institutionId),
     Membership.find({ userId: new mongoose.Types.ObjectId(session.user.id) }).select("institutionId").lean(),
-    Subscription.findOne({ institutionId: new mongoose.Types.ObjectId(current.institutionId) }).lean(),
+    Subscription.findOne({ institutionId: new mongoose.Types.ObjectId(current.institutionId) }).lean() as unknown as Promise<{ paymentProvider?: string } | null>,
   ]);
   const institutions = await Institution.find({ _id: { $in: memberships.map((m) => m.institutionId) } }).select("name").lean();
   const metrics = [
