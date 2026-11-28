@@ -1,1 +1,19 @@
-{"name":"omr-exam-checker","version":"0.1.0","private":true,"workspaces":["apps/*"],"scripts":{"dev:web":"npm run dev --workspace @omr/web","build:web":"npm run build --workspace @omr/web","lint:web":"npm run lint --workspace @omr/web","typecheck:web":"npm run typecheck --workspace @omr/web","check:web":"npm run lint:web && npm run typecheck:web && npm run build:web"},"engines":{"node":">=20.9.0"}}
+{
+  "name": "omr-exam-checker",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @omr/web",
+    "build:web": "npm run build --workspace @omr/web",
+    "lint:web": "npm run lint --workspace @omr/web",
+    "typecheck:web": "npm run typecheck --workspace @omr/web",
+    "test:grading": "node --experimental-strip-types --test apps/web/src/lib/grading/scoring.test.mjs",
+    "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run build:web"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
