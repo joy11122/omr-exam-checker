@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import mongoose, { type PipelineStage } from "mongoose";
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
@@ -52,6 +53,9 @@ function hasValidEmail(email: string | undefined) {
 }
 
 export async function POST(request: Request, context: Context) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "exam:publish", limit: 5, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const origin = request.headers.get("origin");
     const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
