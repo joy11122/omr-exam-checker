@@ -38,6 +38,34 @@ The app runs on port 3000 by default. For local Auth.js, keep `AUTH_URL=http://l
 
 Google sign-in is optional. For browser sign-in, configure both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`. For Android native Google sign-in, set `NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID` to the exact same Web OAuth client ID as `AUTH_GOOGLE_ID`; register Android package name and signing SHA-1 in the same Google Cloud project.
 
+## Deploying the web app and OMR engine together on Vercel
+
+The root `vercel.json` configures two Vercel Services:
+
+- `web`: the Next.js application in `apps/web`, serving the public site.
+- `omr_engine`: the private FastAPI application in `services/omr-engine`.
+
+The web service has a private service binding that injects `OMR_ENGINE_URL` at runtime. The FastAPI service is not exposed directly to the public internet; browser requests should continue to go through the authenticated Next.js API routes.
+
+In Vercel, import the repository as a **Services** project (not as a single Next.js application). Configure these project environment variables for Production, Preview, and Development as appropriate:
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `MONGODB_URI` | Yes | MongoDB Atlas connection string |
+| `MONGODB_DB_NAME` | Yes | Database name, e.g. `omr_exam_checker` |
+| `AUTH_SECRET` | Yes | Random secret, at least 32 characters |
+| `APP_URL` | Yes | Canonical HTTPS deployment URL in production |
+| `AUTH_URL` | Recommended | Same canonical HTTPS deployment URL |
+| `OMR_ENGINE_API_KEY` | Yes | Same long random secret for the web and FastAPI services |
+| `AUTH_GOOGLE_ID` | Optional | Google OAuth web client ID |
+| `AUTH_GOOGLE_SECRET` | Optional | Google OAuth client secret |
+| `NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Optional | Must match `AUTH_GOOGLE_ID` for native Android Google sign-in |
+| `RESEND_API_KEY` | Optional | Required for configured email delivery |
+
+Do **not** manually set `OMR_ENGINE_URL` in Vercel: the service binding generates it for the Next.js service. Keep `OMR_ENGINE_API_KEY` server-only and never use a `NEXT_PUBLIC_` prefix. Do not commit real credentials.
+
+Vercel Services are currently in Beta. After importing, verify that the project's Framework Preset is **Services**, then deploy and test both the Next.js health endpoints and the authenticated OMR scan flow. See the [Vercel Services documentation](https://vercel.com/docs/services) for current platform details.
+
 ## OMR engine
 
 The Python service is under `services/omr-engine`:
