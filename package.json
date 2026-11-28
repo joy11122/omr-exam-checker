@@ -15,11 +15,12 @@
     "test:billing": "node --experimental-strip-types --test apps/web/src/lib/billing/plans.test.mjs",
     "test:reports": "node --experimental-strip-types --test apps/web/src/lib/analytics/report-filters.test.mjs",
     "test:security": "node --experimental-strip-types --test apps/web/src/lib/security/*.test.mjs",
-    "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run test:analytics && npm run test:billing && npm run test:reports && npm run test:security && npm run build:web",
+    "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run test:analytics && npm run test:billing && npm run test:reports && npm run test:security && npm run test:native && npm run build:web",
     "android:add": "cap add android && node scripts/android-configure.mjs",
     "android:sync": "node scripts/android-configure.mjs && cap sync android",
     "android:open": "cap open android",
-    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run android:sync && node scripts/android-build.mjs",
+    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs"
   },
   "engines": {
     "node": ">=20.9.0"
