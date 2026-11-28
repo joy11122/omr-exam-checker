@@ -1,0 +1,26 @@
+name: Production release smoke checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: Canonical HTTPS origin of the deployed OMR Exam Checker app
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Verify deployed application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run production smoke checks
+        env:
+          RELEASE_BASE_URL: ${{ inputs.app_url }}
+        run: node scripts/release-smoke.mjs
