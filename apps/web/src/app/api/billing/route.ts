@@ -44,8 +44,9 @@ export async function POST(request: Request) {
     await connectToDatabase();
     const tenantId = new mongoose.Types.ObjectId(institution.institutionId);
     const existing = await Subscription.findOne({ institutionId: tenantId }).exec();
+    if (existing?.plan === parsed.data.plan || (!existing && parsed.data.plan === "free")) return NextResponse.json({ error: "That is already the active plan." }, { status: 409 });
     if (!existing) {
-      await Subscription.create({ institutionId: tenantId, plan: "free", status: "active", requestedPlan: parsed.data.plan, requestedAt: new Date(), updatedBy: new mongoose.Types.ObjectId(session.user.id) });
+      await Subscription.create({ institutionId: tenantId, plan: "free", status: "pending_change", requestedPlan: parsed.data.plan, requestedAt: new Date(), updatedBy: new mongoose.Types.ObjectId(session.user.id) });
     } else {
       existing.requestedPlan = parsed.data.plan;
       existing.requestedAt = new Date();
