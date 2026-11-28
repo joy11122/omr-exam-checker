@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { Capacitor } from "@capacitor/core";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { AlertCircle, Camera, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, Camera as CameraIcon, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
 
@@ -352,7 +352,7 @@ export function ScanUpload() {
           </button>
           <div className="scan-capture-actions">
             <button className="button button-secondary" type="button" onClick={() => void handleTakePhoto()}>
-              <Camera size={16} /> Take photo
+              <CameraIcon size={16} /> Take photo
             </button>
             <button className="button button-secondary" type="button" onClick={() => inputRef.current?.click()}>
               <FileImage size={16} /> Choose from device
