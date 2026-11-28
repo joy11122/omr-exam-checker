@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, type ReactNode } from "react";
-import { BookOpenCheck, BarChart3, ChevronDown, ClipboardList, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users, UserRoundCog } from "lucide-react";
+import { BookOpenCheck, BarChart3, ChevronDown, ClipboardList, CreditCard, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users, UserRoundCog } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const navigation = [
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Students", href: "/students", icon: Users },
   { label: "Team", href: "/team", icon: UserRoundCog },
+  { label: "Plan & billing", href: "/billing", icon: CreditCard },
 ];
 
 export function WorkspaceShell({ children, email }: { children: ReactNode; email: string }) {
