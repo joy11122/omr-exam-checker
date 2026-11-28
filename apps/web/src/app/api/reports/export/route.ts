@@ -7,7 +7,11 @@ import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { parseReportFilters } from "@/lib/analytics/report-filters";
 import { ExamResult } from "@/models/exam-result";
 export const runtime="nodejs";
-function cell(value:unknown){const raw=String(value??"");const safe=/^[=+@\-\t\r]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"';}
+function cell(value:unknown){
+ const raw=String(value??"");
+ const safe=typeof value==="string"&&/^[=+@\-\t\r]/.test(raw)?"'"+raw:raw;
+ return '"'+safe.replaceAll('"','""')+'"';
+}
 export async function GET(request:Request){
  try{
   const session=await auth();
