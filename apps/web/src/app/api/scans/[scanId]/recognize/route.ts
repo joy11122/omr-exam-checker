@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { Exam, Recognition, Scan } from "@/models";
+import { readBoundedJson } from "@/lib/http/read-bounded-json";
 
 export const runtime = "nodejs";
 
@@ -33,12 +34,14 @@ export async function POST(request: Request, context: RouteContext) {
     if (!institution) return NextResponse.json({ error: "Institution not found." }, { status: 403 });
     await requireInstitutionRole(institution.institutionId, "examiner");
 
-    const declaredLength = Number(request.headers.get("content-length") ?? 0);
-    if (declaredLength > 256 * 1024) {
+    const body = await readBoundedJson(request, 256 * 1024);
+    if (!body.ok && body.reason === "too_large") {
       return NextResponse.json({ error: "The recognition request is too large." }, { status: 413 });
     }
-    const body = await request.json().catch(() => null);
-    const parsed = recognitionRequestSchema.safeParse(body);
+    if (!body.ok) {
+      return NextResponse.json({ error: "Provide a valid calibrated A–D bubble layout." }, { status: 400 });
+    }
+    const parsed = recognitionRequestSchema.safeParse(body.value);
     if (!parsed.success) {
       return NextResponse.json({ error: "Provide a valid calibrated A–D bubble layout." }, { status: 400 });
     }
