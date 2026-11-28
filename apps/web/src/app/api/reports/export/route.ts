@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
@@ -13,6 +14,8 @@ function cell(value:unknown){
  return '"'+safe.replaceAll('"','""')+'"';
 }
 export async function GET(request:Request){
+ const rateLimit=rateLimitResponse(await checkRequestRateLimit(request,{scope:"reports:export",limit:20,windowMs:10*60*1000}));
+ if(rateLimit)return rateLimit;
  try{
   const session=await auth();
   if(!session?.user?.id||!mongoose.isValidObjectId(session.user.id))return NextResponse.json({error:"Sign in to export reports."},{status:401});

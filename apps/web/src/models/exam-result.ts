@@ -60,5 +60,6 @@ examResultSchema.index({ institutionId: 1, examId: 1, calculatedAt: -1 });
 examResultSchema.index({ institutionId: 1, studentId: 1, calculatedAt: -1 });
 examResultSchema.index({ institutionId: 1, studentId: 1, publicationStatus: 1, calculatedAt: -1 });
 examResultSchema.index({ institutionId: 1, publicationStatus: 1, examId: 1, studentId: 1, revision: -1 });
+examResultSchema.index({ institutionId: 1, publicationStatus: 1, publishedAt: -1, examId: 1, studentId: 1, revision: -1 });
 
 export const ExamResult = mongoose.models.ExamResult ?? mongoose.model("ExamResult", examResultSchema);

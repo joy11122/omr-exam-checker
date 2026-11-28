@@ -7,6 +7,7 @@ import { clientPromise } from "@/lib/mongodb/adapter-client";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { User } from "@/models";
 import { credentialsSchema } from "@/lib/validations/auth";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 const providers = [
   ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
@@ -15,7 +16,9 @@ const providers = [
   Credentials({
     name: "Email and password",
     credentials: { email: { label: "Email", type: "email" }, password: { label: "Password", type: "password" } },
-    async authorize(rawCredentials) {
+    async authorize(rawCredentials, request) {
+      const limitResponse = rateLimitResponse(await checkRequestRateLimit(request, { scope: "auth:credentials", limit: 8, windowMs: 15 * 60 * 1000 }));
+      if (limitResponse) return null;
       const parsed = credentialsSchema.safeParse(rawCredentials);
       if (!parsed.success) return null;
       await connectToDatabase();

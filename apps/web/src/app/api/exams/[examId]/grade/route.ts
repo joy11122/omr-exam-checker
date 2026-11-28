@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import mongoose from "mongoose";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
@@ -43,6 +44,9 @@ function round2(value: number) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "exam:grade", limit: 10, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const session = await auth();
     if (!session?.user?.id || !mongoose.isValidObjectId(session.user.id)) {

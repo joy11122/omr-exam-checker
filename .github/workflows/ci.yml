@@ -28,6 +28,7 @@ jobs:
       - run: npm run test:analytics
       - run: npm run test:billing
       - run: npm run test:reports
+      - run: npm run test:security
       - run: npm run build:web
 
   omr-engine:

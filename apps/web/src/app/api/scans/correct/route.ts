@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { auth } from "@/auth";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
@@ -9,6 +10,9 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(request: Request) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "scan:correct", limit: 8, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_UPLOAD_BYTES + 1024 * 1024) {

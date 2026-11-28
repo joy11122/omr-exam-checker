@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { z } from "zod";
@@ -17,6 +18,9 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const intakeResultSchema = z.object({ status: z.enum(["accepted", "review_required"]), stage: z.literal("intake_validated"), sha256: z.string().regex(/^[a-f0-9]{64}$/), image: z.object({ format: z.string().max(12), width: z.number().int().positive(), height: z.number().int().positive() }), quality: z.object({ portrait: z.boolean(), contrast: z.boolean(), status: z.string().max(40) }) });
 
 export async function POST(request: Request) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "scan:intake", limit: 12, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_UPLOAD_BYTES + 1024 * 1024) {
