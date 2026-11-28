@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const manifestPath = resolve("android/app/src/main/AndroidManifest.xml");
@@ -36,3 +36,48 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
 
 await writeFile(manifestPath, manifest, "utf8");
 console.log("Android manifest configured for OMR Exam Checker and omrexamchecker:// deep links.");
+
+const javaDirectory = resolve("android/app/src/main/java/com/omrexamchecker/app");
+await mkdir(javaDirectory, { recursive: true });
+const javaPath = resolve(javaDirectory, "MainActivity.java");
+const kotlinPath = resolve(javaDirectory, "MainActivity.kt");
+await rm(kotlinPath, { force: true });
+const mainActivity = `package com.omrexamchecker.app;
+
+import android.content.Intent;
+import android.util.Log;
+import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginHandle;
+import ee.forgr.capacitor.social.login.GoogleProvider;
+import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
+import ee.forgr.capacitor.social.login.SocialLoginPlugin;
+
+public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode >= GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MIN
+                && requestCode < GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MAX) {
+            PluginHandle pluginHandle = getBridge().getPlugin("SocialLogin");
+            if (pluginHandle == null) {
+                Log.w("Google Activity Result", "SocialLogin plugin handle is unavailable");
+                return;
+            }
+            Plugin plugin = pluginHandle.getInstance();
+            if (!(plugin instanceof SocialLoginPlugin)) {
+                Log.w("Google Activity Result", "SocialLogin plugin instance has an unexpected type");
+                return;
+            }
+            ((SocialLoginPlugin) plugin).handleGoogleLoginIntent(requestCode, data);
+        }
+    }
+
+    @Override
+    public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {
+        // Required by the native Google Credential Manager plugin.
+    }
+}
+`;
+await writeFile(javaPath, mainActivity, "utf8");
+console.log("Android MainActivity configured for native Google Credential Manager sign-in.");
