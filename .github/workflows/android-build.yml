@@ -31,9 +31,9 @@ jobs:
       - name: Validate application URL
         run: node -e "const u = new URL(process.env.CAPACITOR_SERVER_URL); if (u.protocol !== 'https:') process.exit(1);"
       - run: npm install
-      - run: npx cap add android --project-dir apps/web
+      - run: cd apps/web && npx cap add android
       - run: node scripts/android-configure.mjs
-      - run: npx cap sync android --project-dir apps/web
+      - run: cd apps/web && npx cap sync android
       - run: node scripts/verify-android-project.mjs
       - name: Build APK and collect signing fingerprint
         run: |
