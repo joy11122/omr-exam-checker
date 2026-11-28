@@ -132,6 +132,7 @@ const scanSchema = new Schema({
 }, { timestamps: true, collection: "scans" });
 scanSchema.index({ institutionId: 1, sha256: 1 }, { unique: true });
 scanSchema.index({ institutionId: 1, createdAt: -1 });
+scanSchema.index({ institutionId: 1, examId: 1, studentId: 1 });
 
 
 const recognitionOptionSchema = new Schema({
@@ -172,6 +173,7 @@ const recognitionSchema = new Schema({
   reviewedAt: { type: Date, default: null },
 }, { timestamps: true, collection: "omr_recognitions" });
 recognitionSchema.index({ institutionId: 1, scanId: 1, createdAt: -1 });
+recognitionSchema.index({ institutionId: 1, examId: 1, scanId: 1, createdAt: -1, _id: -1 });
 recognitionSchema.index({ institutionId: 1, examId: 1, subjectId: 1, pageNumber: 1 });
 
 export const Recognition = mongoose.models.Recognition ?? mongoose.model("Recognition", recognitionSchema);
