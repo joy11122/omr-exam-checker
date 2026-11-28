@@ -43,6 +43,11 @@ const examResultSchema = new Schema({
   sourceHash: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
   revision: { type: Number, required: true, min: 1 },
   status: { type: String, enum: ["calculated"], default: "calculated", required: true },
+  publicationStatus: { type: String, enum: ["draft", "published"], default: "draft", index: true },
+  publishedAt: { type: Date, default: null },
+  publishedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  notificationStatus: { type: String, enum: ["not_sent", "sent", "failed", "no_email", "not_configured"], default: "not_sent" },
+  notificationSentAt: { type: Date, default: null },
   calculatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   calculatedAt: { type: Date, required: true, default: Date.now },
 }, { timestamps: true, collection: "exam_results" });
@@ -53,5 +58,6 @@ examResultSchema.index(
 );
 examResultSchema.index({ institutionId: 1, examId: 1, calculatedAt: -1 });
 examResultSchema.index({ institutionId: 1, studentId: 1, calculatedAt: -1 });
+examResultSchema.index({ institutionId: 1, studentId: 1, publicationStatus: 1, calculatedAt: -1 });
 
 export const ExamResult = mongoose.models.ExamResult ?? mongoose.model("ExamResult", examResultSchema);
