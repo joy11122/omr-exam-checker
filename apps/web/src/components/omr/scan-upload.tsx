@@ -243,14 +243,14 @@ export function ScanUpload() {
     }
   }
 
-  function selectFile(nextFile: File | null) {
+  const selectFile = useCallback((nextFile: File | null) => {
     setFile(nextFile);
     setError("");
     setResult(null);
     setSavedScanId(null);
     setRegistration(null);
     setCorrectedUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
-  }
+  }, []);
 
   async function handleTakePhoto() {
     if (!Capacitor.isNativePlatform()) {
