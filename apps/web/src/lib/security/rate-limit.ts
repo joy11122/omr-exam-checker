@@ -1,9 +1,9 @@
 import "server-only";
 
 import { createHmac } from "node:crypto";
-import { isIP } from "node:net";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import { getClientAddress, isRateLimitAllowed } from "@/lib/security/rate-limit-utils";
 import { connectToDatabase } from "@/lib/mongodb/client";
 
 type RateLimitDocument = { _id: string; count: number; resetAt: Date };
@@ -14,18 +14,6 @@ type RateLimitOutcome =
   | { allowed: false; unavailable: true };
 
 let ttlIndexPromise: Promise<string> | null = null;
-
-export function getClientAddress(headers: Headers): string {
-  const realIp = headers.get("x-real-ip")?.trim();
-  if (realIp && isIP(realIp)) return realIp;
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  if (forwarded && isIP(forwarded)) return forwarded;
-  return "unknown";
-}
-
-export function isRateLimitAllowed(count: number, limit: number): boolean {
-  return Number.isSafeInteger(count) && Number.isSafeInteger(limit) && count >= 1 && limit >= 1 && count <= limit;
-}
 
 export async function checkRequestRateLimit(
   request: Request,
