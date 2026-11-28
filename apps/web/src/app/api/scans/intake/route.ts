@@ -8,6 +8,7 @@ import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { deleteScanImage, storeScanImage } from "@/lib/mongodb/scan-storage";
 import { Scan } from "@/models";
+import { assertUsageAllowed } from "@/lib/billing/usage";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Join an institution before uploading scans." }, { status: 403 });
     }
     await requireInstitutionRole(institution.institutionId, "examiner");
+    await assertUsageAllowed(institution.institutionId, "scansPerMonth");
 
     const formData = await request.formData().catch(() => null);
     if (!formData) {
@@ -116,6 +118,7 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.name === "TimeoutError") {
       return NextResponse.json({ error: "Image processing timed out. Please try again." }, { status: 504 });
     }
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") return NextResponse.json({ error: "Your monthly scan allowance has been reached. Upgrade the institution plan to continue." }, { status: 402 });
     console.error("Scan intake request failed", error);
     return NextResponse.json({ error: "Unable to process the scan right now. Please try again." }, { status: 500 });
   }
