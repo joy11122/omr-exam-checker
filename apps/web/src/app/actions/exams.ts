@@ -8,6 +8,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { answerKeySchema, createExamSchema } from "@/lib/validations/exams";
 import { Exam } from "@/models";
+import { assertUsageAllowed } from "@/lib/billing/usage";
 
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -42,6 +43,7 @@ export async function createExam(formData: FormData) {
   try {
     await requireInstitutionRole(parsed.data.institutionId, "teacher");
     await connectToDatabase();
+    await assertUsageAllowed(parsed.data.institutionId, "exams");
     const startsAt = parsed.data.startsAt ? new Date(parsed.data.startsAt) : null;
     if (startsAt && Number.isNaN(startsAt.getTime())) redirect("/exams?error=invalid_exam");
     await Exam.create({
@@ -57,6 +59,7 @@ export async function createExam(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/exams?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/exams?error=plan_limit_reached");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/exams?error=exam_code_exists");
     redirect("/exams?error=create_failed");

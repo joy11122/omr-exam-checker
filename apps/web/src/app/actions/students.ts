@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { Student } from "@/models";
+import { assertUsageAllowed } from "@/lib/billing/usage";
 import { bulkStudentsSchema, studentSchema, updateStudentSchema } from "@/lib/validations/phase-two";
 
 function parseCsvLine(line: string): string[] {
@@ -30,9 +31,11 @@ export async function createStudent(formData: FormData) {
   try {
     await requireInstitutionRole(parsed.data.institutionId, "teacher");
     await connectToDatabase();
+    await assertUsageAllowed(parsed.data.institutionId, "students");
     await Student.create({ ...parsed.data, institutionId: new mongoose.Types.ObjectId(parsed.data.institutionId) });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/students?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/students?error=plan_limit_reached");
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/students?error=student_code_exists");
     redirect("/students?error=student_create_failed");
   }
@@ -115,6 +118,7 @@ export async function importStudents(formData: FormData) {
     const codes = validRecords.map((record) => record.studentCode.toUpperCase());
     if (new Set(codes).size !== codes.length) redirect("/students?error=duplicate_codes_in_csv");
     await connectToDatabase();
+    await assertUsageAllowed(parsed.data.institutionId, "students", validRecords.length);
     const existing = await Student.exists({ institutionId: new mongoose.Types.ObjectId(parsed.data.institutionId), studentCode: { $in: codes } });
     if (existing) redirect("/students?error=some_codes_exist");
     const mongoSession = await mongoose.startSession();
@@ -127,6 +131,7 @@ export async function importStudents(formData: FormData) {
     }
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/students?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/students?error=plan_limit_reached");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/students?error=some_codes_exist");
     redirect("/students?error=import_failed");

@@ -8,6 +8,7 @@ import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { Invitation, Membership, User } from "@/models";
 import { invitationSchema, membershipRoleSchema, removeMemberSchema } from "@/lib/validations/phase-two";
+import { assertUsageAllowed } from "@/lib/billing/usage";
 
 export async function createTeamInvitation(formData: FormData) {
   const parsed = invitationSchema.safeParse(Object.fromEntries(formData));
@@ -18,6 +19,7 @@ export async function createTeamInvitation(formData: FormData) {
   try {
     await requireInstitutionRole(parsed.data.institutionId, parsed.data.role === "admin" ? "owner" : "admin");
     await connectToDatabase();
+    await assertUsageAllowed(parsed.data.institutionId, "members");
     const existingUser = await User.findOne({ email: parsed.data.email }).select("_id");
     if (existingUser) {
       const existingMembership = await Membership.findOne({ institutionId: parsed.data.institutionId, userId: existingUser._id });
@@ -35,6 +37,7 @@ export async function createTeamInvitation(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/team?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/team?error=plan_limit_reached");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
     redirect("/team?error=invite_failed");
   }
@@ -106,6 +109,7 @@ export async function acceptTeamInvitation(formData: FormData) {
       }).session(mongoSession);
       if (!invitation) throw new Error("INVITATION_INVALID");
       institutionId = String(invitation.institutionId);
+      await assertUsageAllowed(institutionId, "members");
       await Membership.updateOne(
         { institutionId: invitation.institutionId, userId: new mongoose.Types.ObjectId(session.user.id) },
         { $setOnInsert: { role: invitation.role } },
@@ -114,7 +118,8 @@ export async function acceptTeamInvitation(formData: FormData) {
       invitation.acceptedAt = new Date();
       await invitation.save({ session: mongoSession });
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/login?error=plan_limit_reached");
     redirect("/login?error=invitation_invalid_or_used");
   } finally {
     await mongoSession.endSession();

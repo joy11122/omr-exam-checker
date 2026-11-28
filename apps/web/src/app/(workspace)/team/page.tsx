@@ -9,7 +9,7 @@ import { createTeamInvitation, removeTeamMember, updateMemberRole } from "@/app/
 import { InviteLinkCopy } from "@/components/workspace/invite-link-copy";
 
 type Props={searchParams:Promise<{institutionId?:string;error?:string;invite?:string;updated?:string;removed?:string;joined?:string}>};
-const errors:Record<string,string>={invalid_invitation:"Enter a valid email and role.",forbidden:"You do not have permission to manage this team.",already_member:"This user is already a member.",invite_failed:"Could not create the invitation.",invalid_role:"Choose a valid team role.",protected_owner:"The institution owner cannot be changed or removed.",role_update_failed:"Could not update the member role.",invalid_member:"Invalid team member.",remove_failed:"Could not remove this member."};
+const errors:Record<string,string>={invalid_invitation:"Enter a valid email and role.",forbidden:"You do not have permission to manage this team.",already_member:"This user is already a member.",invite_failed:"Could not create the invitation.",plan_limit_reached:"Your plan team-member limit has been reached. Upgrade the plan to invite more people.",invalid_role:"Choose a valid team role.",protected_owner:"The institution owner cannot be changed or removed.",role_update_failed:"Could not update the member role.",invalid_member:"Invalid team member.",remove_failed:"Could not remove this member."};
 export default async function TeamPage({searchParams}:Props){
  const params=await searchParams;const session=await auth();
  if(!session?.user?.id||!mongoose.isValidObjectId(session.user.id))return null;

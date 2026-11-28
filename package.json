@@ -12,7 +12,8 @@
     "typecheck:web": "npm run typecheck --workspace @omr/web",
     "test:grading": "node --experimental-strip-types --test apps/web/src/lib/grading/scoring.test.mjs",
     "test:analytics": "node --experimental-strip-types --test apps/web/src/lib/analytics/rankings.test.mjs",
-    "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run test:analytics && npm run build:web"
+    "test:billing": "node --experimental-strip-types --test apps/web/src/lib/billing/plans.test.mjs",
+    "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run test:analytics && npm run test:billing && npm run build:web"
   },
   "engines": {
     "node": ">=20.9.0"
