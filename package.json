@@ -23,7 +23,7 @@
     "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.3"
