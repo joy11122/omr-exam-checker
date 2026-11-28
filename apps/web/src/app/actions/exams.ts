@@ -8,6 +8,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { answerKeySchema, createExamSchema } from "@/lib/validations/exams";
 import { Exam } from "@/models";
+import { assertUsageAllowed } from "@/lib/billing/usage";
 
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -42,6 +43,7 @@ export async function createExam(formData: FormData) {
   try {
     await requireInstitutionRole(parsed.data.institutionId, "teacher");
     await connectToDatabase();
+    await assertUsageAllowed(parsed.data.institutionId, "exams");
     const startsAt = parsed.data.startsAt ? new Date(parsed.data.startsAt) : null;
     if (startsAt && Number.isNaN(startsAt.getTime())) redirect("/exams?error=invalid_exam");
     await Exam.create({
