@@ -13,6 +13,7 @@ const errors: Record<string, string> = {
   forbidden: "You do not have permission to create exams.",
   exam_code_exists: "That exam code already exists in this institution.",
   create_failed: "The exam could not be created. Please try again.",
+  plan_limit_reached: "Your plan exam limit has been reached. Upgrade your plan to create more exams.",
   invalid_answer_key: "The answer key format is invalid.",
   exam_not_found: "The requested exam was not found.",
   save_failed: "The answer key could not be saved.",
