@@ -20,7 +20,7 @@
     "android:sync": "node scripts/android-configure.mjs && cap sync android",
     "android:open": "cap open android",
     "android:build": "npm run android:sync && node scripts/android-build.mjs",
-    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs"
+    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs"
   },
   "engines": {
     "node": ">=20.9.0"
