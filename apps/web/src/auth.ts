@@ -45,6 +45,23 @@ const providers = [
       if (!user.emailVerified) {
         await User.updateOne({ _id: user._id, email: identity.email }, { $set: { emailVerified: new Date() } });
       }
+
+      // Keep the native Google identity linked in the same accounts collection
+      // used by MongoDBAdapter, so browser Google sign-in resolves to this user too.
+      const client = await clientPromise;
+      const accounts = client.db(process.env.MONGODB_DB_NAME ?? "omr_exam_checker").collection("accounts");
+      try {
+        await accounts.updateOne(
+          { provider: "google", providerAccountId: identity.googleSubject },
+          { $setOnInsert: { userId: user._id, type: "oidc", provider: "google", providerAccountId: identity.googleSubject } },
+          { upsert: true },
+        );
+      } catch (error) {
+        if (!(error && typeof error === "object" && "code" in error && error.code === 11000)) throw error;
+      }
+      const linkedAccount = await accounts.findOne({ provider: "google", providerAccountId: identity.googleSubject });
+      if (!linkedAccount || linkedAccount.userId?.toString() !== user._id.toString()) return null;
+
       return { id: user._id.toString(), name: user.name, email: user.email, image: user.image ?? null };
     },
   })] : []),
