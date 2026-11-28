@@ -6,7 +6,7 @@
 - Zod validates form, route, and server-action input.
 - MongoDB Atlas is the source of truth, accessed through Mongoose.
 - Auth.js manages sessions and optional Google OAuth; the MongoDB adapter stores OAuth accounts and sessions.
-- Android is the only native mobile target. Capacitor Android packaging is planned after the web workflow is stable. iOS is out of scope.
+- Android is the only native mobile target. Capacitor Android project and native camera / Google identity integration are implemented; production packaging and physical-device acceptance remain release gates. iOS is out of scope.
 - The product UI uses a ChatGPT-inspired workspace: collapsible left navigation and a focused central work area.
 
 ## Runtime boundaries
