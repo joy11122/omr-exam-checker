@@ -224,7 +224,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
  .management-panel { padding: 15px; }
  .student-row { gap: 8px; }
  .student-meta-fields { grid-template-columns: 1fr 1fr; }
- .student-meta-fields input:last-child { display: none; }
  .team-row { flex-wrap: wrap; }
  .team-person { flex-basis: calc(100% - 60px); }
  .role-form { margin-left: 41px; }

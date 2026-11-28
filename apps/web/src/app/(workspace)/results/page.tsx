@@ -7,6 +7,7 @@ import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { Exam } from "@/models";
 import { ExamResult } from "@/models/exam-result";
 import { GradeExamButton } from "@/components/results/grade-exam-button";
+import { PublishExamResults } from "@/components/results/publish-exam-results";
 import styles from "./results.module.css";
 
 type ExamRow = {
@@ -31,6 +32,8 @@ type ResultRow = {
   totalIncorrect: number;
   totalBlank: number;
   revision: number;
+  publicationStatus?: "draft" | "published";
+  notificationStatus?: string;
 };
 
 export default async function ResultsPage() {
@@ -76,7 +79,7 @@ export default async function ResultsPage() {
               </div>
               <div className={styles.examActions}>
                 <Link className="button button-secondary" href={"/exams/" + exam._id}>Answer keys</Link>
-                <GradeExamButton examId={String(exam._id)} disabled={!complete}/>
+                <GradeExamButton examId={String(exam._id)} disabled={!complete}/><PublishExamResults examId={String(exam._id)} disabled={!complete}/>
               </div>
             </article>;
           })}
@@ -85,19 +88,19 @@ export default async function ResultsPage() {
       </section>
       <section className={styles.panel}>
         <div className={styles.resultsHeading}>
-          <div><span className={styles.icon}><Trophy size={18}/></span><div><h2>Calculated results</h2><p>Latest calculation per candidate · showing up to 100</p></div></div>
+          <div><span className={styles.icon}><Trophy size={18}/></span><div><h2>Calculated results</h2><p>Latest calculation per candidate · showing up to 100. Publish to release results and email secure student access links.</p></div></div>
           <a className="button button-secondary" href="/api/results/export"><Download size={15}/> Export CSV</a>
         </div>
         {results.length ? <div className={styles.tableWrap}>
           <table className={styles.table}>
-            <thead><tr><th>Candidate</th><th>Exam</th><th>Correct / Wrong / Blank</th><th>Marks</th><th>Percentage</th><th>Revision</th></tr></thead>
+            <thead><tr><th>Candidate</th><th>Exam</th><th>Correct / Wrong / Blank</th><th>Marks</th><th>Percentage</th><th>Revision</th><th>Release</th></tr></thead>
             <tbody>{results.map((result) => <tr key={String(result._id)}>
               <td><Link className={styles.resultLink} href={"/results/" + result._id}><strong>{result.studentName}</strong><span>{result.studentCode}{result.className ? " · " + result.className : ""}{result.section ? " · " + result.section : ""}{result.rollNumber ? " · Roll " + result.rollNumber : ""}</span></Link></td>
               <td><strong>{result.examTitle}</strong><span>{result.examCode}</span></td>
               <td>{result.totalCorrect} / {result.totalIncorrect} / {result.totalBlank}</td>
               <td><strong>{result.totalMarksObtained}</strong><span>of {result.totalMaximumMarks}</span></td>
               <td><strong>{result.percentage.toFixed(2)}%</strong></td>
-              <td>#{result.revision}</td>
+              <td>#{result.revision}</td><td><span className={result.publicationStatus === "published" ? "secure-chip" : "muted-copy"}>{result.publicationStatus === "published" ? "Published" : "Draft"}</span><span>{String(result.notificationStatus ?? "not_sent").replaceAll("_", " ")}</span></td>
             </tr>)}</tbody>
           </table>
         </div> : <div className="empty-state"><span className="empty-icon"><Trophy size={20}/></span><strong>No calculated results yet</strong><p>Complete answer keys, match scanned sheets to students, recognize each page, and submit examiner reviews.</p></div>}

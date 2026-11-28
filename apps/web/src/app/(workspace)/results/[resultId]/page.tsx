@@ -44,6 +44,8 @@ type ResultRecord = {
   percentage: number;
   revision: number;
   calculatedAt: Date;
+  publicationStatus?: "draft" | "published";
+  notificationStatus?: string;
 };
 
 export default async function ResultDetailPage({ params }: Props) {
@@ -72,7 +74,7 @@ export default async function ResultDetailPage({ params }: Props) {
         <div><span>Marks obtained</span><strong>{result.totalMarksObtained} / {result.totalMaximumMarks}</strong></div>
         <div><span>Percentage</span><strong>{result.percentage.toFixed(2)}%</strong></div>
         <div><span>Correct · Wrong · Blank</span><strong>{result.totalCorrect} · {result.totalIncorrect} · {result.totalBlank}</strong></div>
-        <p>Calculated {new Date(result.calculatedAt).toLocaleString()} · Snapshot revision #{result.revision}</p>
+        <p>Calculated {new Date(result.calculatedAt).toLocaleString()} · Snapshot revision #{result.revision} · {result.publicationStatus === "published" ? "Published" : "Not published"}</p><p>Notification: {String(result.notificationStatus ?? "not_sent").replaceAll("_", " ")}</p>
       </section>
       {result.subjects.map((subject) => (
         <section className={styles.subject} key={String(subject.subjectId)}>
