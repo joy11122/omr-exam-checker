@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { exchangeStudentMagicLink, STUDENT_SESSION_COOKIE, studentSessionMaxAge } from "@/lib/student-portal/access";
 
 type Context = { params: Promise<{ token: string }> };
 
 export async function POST(request: Request, context: Context) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "student:magic-link", limit: 5, windowMs: 15 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const origin = request.headers.get("origin");
     const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
