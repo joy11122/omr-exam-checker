@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { auth } from "@/auth";
@@ -17,6 +18,9 @@ const matchSchema = z.object({
 });
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "scan:match", limit: 30, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const session = await auth();
     if (!session?.user?.id || !mongoose.isValidObjectId(session.user.id)) {
