@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, type ReactNode } from "react";
-import { BookOpenCheck, BarChart3, ChevronDown, ClipboardList, CreditCard, FileChartColumn, FileSearch, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users, UserRoundCog } from "lucide-react";
+import { BookOpenCheck, BarChart3, ChevronDown, ClipboardList, CreditCard, FileSearch, FileText, GraduationCap, LayoutDashboard, LogOut, Menu, Plus, Settings2, ShieldCheck, Users, UserRoundCog } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -11,7 +11,7 @@ const navigation = [
   { label: "OMR scans", href: "/scans", icon: FileSearch },
   { label: "Results", href: "/results", icon: BookOpenCheck },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Advanced reports", href: "/reports", icon: FileChartColumn },
+  { label: "Advanced reports", href: "/reports", icon: FileText },
   { label: "Students", href: "/students", icon: Users },
   { label: "Team", href: "/team", icon: UserRoundCog },
   { label: "Plan & billing", href: "/billing", icon: CreditCard },
