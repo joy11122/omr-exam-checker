@@ -2,11 +2,12 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import mongoose from "mongoose";
+import type { Document } from "mongodb";
 import { NextResponse } from "next/server";
 import { getClientAddress, isRateLimitAllowed } from "@/lib/security/rate-limit-utils";
 import { connectToDatabase } from "@/lib/mongodb/client";
 
-type RateLimitDocument = { _id: string; count: number; resetAt: Date };
+type RateLimitDocument = Document & { _id: string; count: number; resetAt: Date };
 type RateLimitOptions = { scope: string; limit: number; windowMs: number };
 type RateLimitOutcome =
   | { allowed: true; limit: number; remaining: number; resetAt: Date }
