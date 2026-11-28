@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
 import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { Recognition } from "@/models";
+import { readBoundedJson } from "@/lib/http/read-bounded-json";
 
 export const runtime = "nodejs";
 
@@ -34,13 +35,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!institution) return NextResponse.json({ error: "Institution not found." }, { status: 403 });
     await requireInstitutionRole(institution.institutionId, "examiner");
 
-    const declaredLength = Number(request.headers.get("content-length") ?? 0);
-    if (declaredLength > 32 * 1024) {
+    const body = await readBoundedJson(request, 32 * 1024);
+    if (!body.ok && body.reason === "too_large") {
       return NextResponse.json({ error: "The answer review request is too large." }, { status: 413 });
     }
-
-    const body = await request.json().catch(() => null);
-    const parsed = reviewSchema.safeParse(body);
+    if (!body.ok) {
+      return NextResponse.json({ error: "Provide a valid answer for every question." }, { status: 400 });
+    }
+    const parsed = reviewSchema.safeParse(body.value);
     if (!parsed.success) {
       return NextResponse.json({ error: "Provide a valid answer for every question." }, { status: 400 });
     }
