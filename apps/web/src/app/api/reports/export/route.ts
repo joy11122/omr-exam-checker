@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { getCurrentInstitution } from "@/lib/tenancy/current-institution";
