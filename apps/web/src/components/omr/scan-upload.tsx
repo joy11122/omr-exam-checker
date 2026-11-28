@@ -299,7 +299,7 @@ export function ScanUpload() {
     };
     window.addEventListener("omr-native-camera-restored", handleRestoredCamera);
     return () => window.removeEventListener("omr-native-camera-restored", handleRestoredCamera);
-  }, []);
+  }, [selectFile]);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     selectFile(event.target.files?.[0] ?? null);
