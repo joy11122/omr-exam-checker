@@ -2,17 +2,21 @@ import "server-only";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb/client";
 import { PLAN_CATALOG, type PlanId, type UsageMetric, withinPlanLimit } from "@/lib/billing/plans";
-import { Exam, Membership, Student } from "@/models";
+import { Exam, Membership, Scan, Student } from "@/models";
 import { Subscription } from "@/models/subscription";
 
 export async function getInstitutionUsage(institutionId: string) {
   if (!mongoose.isValidObjectId(institutionId)) throw new Error("INVALID_INSTITUTION");
   await connectToDatabase();
   const tenant = new mongoose.Types.ObjectId(institutionId);
-  const [students, exams, members, subscription] = await Promise.all([
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const [students, exams, members, scansPerMonth, subscription] = await Promise.all([
     Student.countDocuments({ institutionId: tenant }),
     Exam.countDocuments({ institutionId: tenant }),
     Membership.countDocuments({ institutionId: tenant }),
+    Scan.countDocuments({ institutionId: tenant, createdAt: { $gte: monthStart } }),
     Subscription.findOne({ institutionId: tenant }).lean().exec(),
   ]);
   const plan = (subscription?.plan ?? "free") as PlanId;
@@ -20,13 +24,13 @@ export async function getInstitutionUsage(institutionId: string) {
   return {
     plan,
     status: subscription?.status ?? "active",
-    usage: { students, exams, members, scansPerMonth: 0 },
+    usage: { students, exams, members, scansPerMonth },
     limits,
     remaining: {
       students: limits.students === null ? null : Math.max(0, limits.students - students),
       exams: limits.exams === null ? null : Math.max(0, limits.exams - exams),
       members: limits.members === null ? null : Math.max(0, limits.members - members),
-      scansPerMonth: limits.scansPerMonth,
+      scansPerMonth: limits.scansPerMonth === null ? null : Math.max(0, limits.scansPerMonth - scansPerMonth),
     },
   };
 }
