@@ -70,7 +70,7 @@ The generated android/ folder is a native build output and is not committed by t
 
 ## GitHub Actions debug APK
 
-Run Actions → Android APK → Run workflow. Supply the canonical HTTPS URL of the deployed Next.js app. The workflow generates the Android project, configures native Google sign-in and deep links, builds a debug APK, and uploads the APK and certificate information.
+Run Actions → Android APK → Run workflow. Supply the canonical HTTPS URL of the deployed Next.js app. The workflow generates the Android project from the `apps/web` workspace, configures the standard Capacitor MainActivity and deep links, verifies native plugin linkage, builds a debug APK, and uploads the APK and certificate information.
 
 ## Required physical-device acceptance before any release
 
