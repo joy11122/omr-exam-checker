@@ -11,27 +11,27 @@ try {
 }
 
 const scheme = "omrexamchecker";
-const activityPattern = /(<activity\\b[^>]*android:name="(?:\\.MainActivity|com\\.omrexamchecker\\.app\\.MainActivity)"[^>]*>)([\\s\\S]*?)(<\\/activity>)/;
-if (!manifest.includes(`android:scheme="${scheme}"`)) {
+const activityPattern = /(<activity\b[^>]*android:name="(?:\.MainActivity|com\.omrexamchecker\.app\.MainActivity)"[^>]*>)([\s\S]*?)(<\/activity>)/;
+if (!manifest.includes(\`android:scheme="\${scheme}"\`)) {
   if (!activityPattern.test(manifest)) {
     throw new Error("Could not find the Capacitor MainActivity in AndroidManifest.xml.");
   }
   manifest = manifest.replace(activityPattern, (_match, open, body, close) =>
-    `${open}${body}
+    \`\${open}\${body}
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="${scheme}" />
+                <data android:scheme="\${scheme}" />
             </intent-filter>
-        ${close}`,
+        \${close}\`,
   );
 }
 
 if (!manifest.includes('android:name="android.hardware.camera"')) {
   manifest = manifest.replace(
     "<application",
-    '    <uses-feature android:name="android.hardware.camera" android:required="false" />\\n    <application',
+    '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <application',
   );
 }
 
@@ -46,11 +46,11 @@ await rm(kotlinPath, { force: true });
 try {
   await readFile(javaPath, "utf8");
 } catch {
-  await writeFile(javaPath, `package com.omrexamchecker.app;
+  await writeFile(javaPath, \`package com.omrexamchecker.app;
 
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {}
-`, "utf8");
+\`, "utf8");
 }
 console.log("Android MainActivity uses the standard Capacitor bridge; native plugins are auto-registered by Capacitor.");
