@@ -10,7 +10,7 @@ import { connectToDatabase } from "@/lib/mongodb/client";
 import { Subscription } from "@/models/subscription";
 
 export const runtime = "nodejs";
-const requestSchema = z.object({ institutionId: z.string().regex(/^[a-f\\d]{24}$/i), plan: z.enum(["free", "growth", "enterprise"]) });
+const requestSchema = z.object({ institutionId: z.string().regex(/^[a-f\d]{24}$/i), plan: z.enum(["free", "growth", "enterprise"]) });
 
 export async function GET(request: Request) {
   try {
