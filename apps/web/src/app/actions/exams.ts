@@ -59,6 +59,7 @@ export async function createExam(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/exams?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/exams?error=plan_limit_reached");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/exams?error=exam_code_exists");
     redirect("/exams?error=create_failed");
