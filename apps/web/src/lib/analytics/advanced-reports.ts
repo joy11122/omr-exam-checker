@@ -2,7 +2,15 @@ import "server-only";
 import mongoose, { type PipelineStage } from "mongoose";
 import { ExamResult } from "@/models/exam-result";
 import type { ReportFilters } from "./report-filters";
-export async function getAdvancedInstitutionReports(institutionId: string, filters: ReportFilters) {
+export type AdvancedInstitutionReports = {
+ truncated: boolean;
+ overview: { candidateResults:number; students:number; exams:number; average:number; highest:number; lowest:number };
+ examTrend: Array<{examId:string;title:string;code:string;publishedAt:string|null;candidates:number;average:number;highest:number;lowest:number}>;
+ classPerformance: Array<{className:string;section:string;candidates:number;average:number;highest:number;lowest:number}>;
+ studentProgress: Array<{studentId:string;studentCode:string;studentName:string;className:string;average:number;exams:number;latestPercentage:number;timeline:Array<{examTitle:string;percentage:number;publishedAt:string|null}>}>;
+ subjectTrend: Array<{examTitle:string;subjectName:string;candidates:number;average:number;correct:number;incorrect:number;blank:number}>;
+};
+export async function getAdvancedInstitutionReports(institutionId: string, filters: ReportFilters): Promise<AdvancedInstitutionReports> {
  if(!mongoose.isValidObjectId(institutionId)) throw new Error("INVALID_INSTITUTION");
  const tenantId=new mongoose.Types.ObjectId(institutionId);
  const latest:PipelineStage[]=[
