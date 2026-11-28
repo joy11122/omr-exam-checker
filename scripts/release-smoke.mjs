@@ -62,4 +62,4 @@ if (base.protocol === "https:") {
 }
 pass("production security response headers");
 
-process.stdout.write(`\\nRelease smoke checks passed: ${checks.length}\\n`);
+process.stdout.write(`\nRelease smoke checks passed: ${checks.length}\n`);
