@@ -1,7 +1,7 @@
 export type ReportFilterInput = { from?: string; to?: string; className?: string; examId?: string };
 export type ReportFilters = { from?: Date; to?: Date; className?: string; examId?: string };
-const DATE_PATTERN = /^\\d{4}-\\d{2}-\\d{2}$/;
-const OBJECT_ID_PATTERN = /^[a-f\\d]{24}$/i;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
 export function parseReportFilters(input: ReportFilterInput): { success: true; data: ReportFilters } | { success: false; error: string } {
   const fromRaw = input.from?.trim(), toRaw = input.to?.trim(), className = input.className?.trim(), examId = input.examId?.trim();
   if (fromRaw && !DATE_PATTERN.test(fromRaw)) return { success: false, error: "Start date must use YYYY-MM-DD." };
