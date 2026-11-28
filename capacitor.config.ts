@@ -24,6 +24,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
   },
   plugins: {
+    SocialLogin: { providers: { google: true, apple: false, facebook: false, twitter: false } },
     SplashScreen: {
       launchAutoHide: false,
       launchShowDuration: 0,
