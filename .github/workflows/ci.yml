@@ -30,6 +30,7 @@ jobs:
       - run: npm run test:reports
       - run: npm run test:security
       - run: npm run test:native
+      - run: npm run check:android:scripts
       - run: npm run build:web
 
   omr-engine:
@@ -66,12 +67,13 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - run: npm install
-      - run: npx cap add android
+      - run: cd apps/web && npx cap add android
       - run: node scripts/android-configure.mjs
-      - run: npx cap sync android
-      - run: cd android && ./gradlew assembleDebug
+      - run: cd apps/web && npx cap sync android
+      - run: node scripts/verify-android-project.mjs
+      - run: cd apps/web/android && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: omr-exam-checker-android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: apps/web/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

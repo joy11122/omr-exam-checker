@@ -16,25 +16,18 @@
     "test:reports": "node --experimental-strip-types --test apps/web/src/lib/analytics/report-filters.test.mjs",
     "test:security": "node --experimental-strip-types --test apps/web/src/lib/security/*.test.mjs",
     "check:web": "npm run lint:web && npm run typecheck:web && npm run test:grading && npm run test:analytics && npm run test:billing && npm run test:reports && npm run test:security && npm run test:native && npm run build:web",
-    "android:add": "cap add android && node scripts/android-configure.mjs",
-    "android:sync": "node scripts/android-configure.mjs && cap sync android",
-    "android:open": "cap open android",
+    "android:add": "cd apps/web && cap add android && cd ../.. && node scripts/android-configure.mjs && cd apps/web && cap sync android",
+    "android:sync": "node scripts/android-configure.mjs && cd apps/web && cap sync android",
+    "android:open": "cd apps/web && cap open android",
     "android:build": "npm run android:sync && node scripts/android-build.mjs",
-    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs"
+    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs",
+    "smoke:release": "node scripts/release-smoke.mjs",
+    "check:android:scripts": "node --check scripts/android-configure.mjs && node --check scripts/verify-android-project.mjs && node --check scripts/android-build.mjs && node --check scripts/release-smoke.mjs"
   },
   "engines": {
     "node": ">=22.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.3"
-  },
-  "dependencies": {
-    "@capacitor/android": "^8.6.3",
-    "@capacitor/app": "^8.0.0",
-    "@capacitor/camera": "^8.1.0",
-    "@capacitor/core": "^8.6.3",
-    "@capacitor/splash-screen": "^8.0.0",
-    "@capacitor/status-bar": "^8.0.0",
-    "@capgo/capacitor-social-login": "^8.7.13"
   }
 }

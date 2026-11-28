@@ -20,3 +20,6 @@ supabase/.branches/
 # Capacitor Android project is generated locally or by CI.
 /android/
 /android-debug-certificate.txt
+
+# Capacitor Android project is generated inside the web workspace.
+/apps/web/android/

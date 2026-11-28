@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 const isWindows = process.platform === "win32";
 const executable = isWindows ? "gradlew.bat" : "./gradlew";
 const result = spawnSync(executable, ["assembleDebug"], {
-  cwd: resolve("android"),
+  cwd: resolve("apps/web/android"),
   stdio: "inherit",
   shell: isWindows,
 });

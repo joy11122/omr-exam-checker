@@ -31,19 +31,20 @@ jobs:
       - name: Validate application URL
         run: node -e "const u = new URL(process.env.CAPACITOR_SERVER_URL); if (u.protocol !== 'https:') process.exit(1);"
       - run: npm install
-      - run: npx cap add android
+      - run: cd apps/web && npx cap add android
       - run: node scripts/android-configure.mjs
-      - run: npx cap sync android
+      - run: cd apps/web && npx cap sync android
+      - run: node scripts/verify-android-project.mjs
       - name: Build APK and collect signing fingerprint
         run: |
-          cd android
+          cd apps/web/android
           ./gradlew assembleDebug signingReport
-          cd ..
-          keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk > android-debug-certificate.txt
+          cd ../../..
+          keytool -printcert -jarfile apps/web/android/app/build/outputs/apk/debug/app-debug.apk > android-debug-certificate.txt
       - uses: actions/upload-artifact@v4
         with:
           name: omr-exam-checker-android-debug
           path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            apps/web/android/app/build/outputs/apk/debug/app-debug.apk
             android-debug-certificate.txt
           if-no-files-found: error

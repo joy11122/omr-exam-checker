@@ -18,7 +18,7 @@ if (serverUrl) {
 const config: CapacitorConfig = {
   appId: "com.omrexamchecker.app",
   appName: "OMR Exam Checker",
-  webDir: "www",
+  webDir: "../../www",
   android: {
     backgroundColor: "#f8f9fb",
     allowMixedContent: false,
