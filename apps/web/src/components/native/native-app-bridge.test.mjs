@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const config = await readFile(new URL("../../../../capacitor.config.ts", import.meta.url), "utf8");
+const config = await readFile(new URL("../../../capacitor.config.ts", import.meta.url), "utf8");
 const androidSetup = await readFile(new URL("../../../../../scripts/android-configure.mjs", import.meta.url), "utf8");
 const bridge = await readFile(new URL("./native-app-bridge.tsx", import.meta.url), "utf8");
 
