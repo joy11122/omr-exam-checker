@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeVerifiedGoogleIdentity } from "./google-identity.ts";
+import { normalizeVerifiedGoogleIdentity } from "./google-identity-utils.ts";
 
 test("accepts only a verified Google email and normalizes it", () => {
   assert.deepEqual(
