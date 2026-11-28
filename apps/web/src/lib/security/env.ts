@@ -5,6 +5,9 @@ const envSchema = z.object({
   MONGODB_DB_NAME: z.string().min(1).max(63).regex(/^[^./\\\\ "$]+$/, "MONGODB_DB_NAME contains unsupported characters").default("omr_exam_checker"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must contain at least 32 characters"),
   APP_URL: z.string().url().refine((value) => process.env.NODE_ENV !== "production" || value.startsWith("https://"), "APP_URL must use HTTPS in production"),
+  AUTH_GOOGLE_ID: z.string().optional(),
+  AUTH_GOOGLE_SECRET: z.string().optional(),
+  NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: z.string().optional(),
   OMR_ENGINE_URL: z.string().url().optional(),
   OMR_ENGINE_API_KEY: z.string().min(24).optional(),
 });
