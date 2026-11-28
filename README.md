@@ -120,6 +120,7 @@ The generated Android project is `apps/web/android` and is intentionally not com
 - Phases 0–9: merged (Phase 9 provides subscription plans and manual plan-change requests; no payment gateway is connected).
 - Phase 11: advanced institutional reports, merged.
 - Phase 12: production security/performance hardening, merged.
-- Phase 13: Android Capacitor foundation, merged; Gradle plugin wiring and physical-device acceptance are being verified.
-- Phase 14: production launch readiness in progress.
+- Phase 13: Android Capacitor foundation, merged; physical-device acceptance remains a release gate.
+- Phase 14: production launch readiness automation, merged.
+- Phase 15: production acceptance and operational evidence, in progress.
 - Phase 10 payment gateway integration remains a separate outstanding phase. No online payment is collected and paid plans are not automatically activated.
