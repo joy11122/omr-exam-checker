@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omr-engine"
-version = "0.2.0"
+version = "0.3.0"
 description = "Asynchronous OMR processing service for OMR Exam Checker"
 requires-python = ">=3.11"
 dependencies = [
@@ -12,6 +12,8 @@ dependencies = [
   "uvicorn[standard]>=0.34,<1.0",
   "pydantic-settings>=2.7,<3.0",
   "Pillow>=11.0,<13.0",
+  "numpy>=1.26,<3.0",
+  "opencv-python-headless>=4.10,<5.0",
   "python-multipart>=0.0.20,<1.0",
 ]
 
