@@ -16,3 +16,7 @@ __pycache__/
 
 supabase/.temp/
 supabase/.branches/
+
+# Capacitor Android project is generated locally or by CI.
+/android/
+/android-debug-certificate.txt
