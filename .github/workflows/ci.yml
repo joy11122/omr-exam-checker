@@ -26,6 +26,7 @@ jobs:
       - run: npm run typecheck:web
       - run: npm run test:grading
       - run: npm run test:analytics
+      - run: npm run test:billing
       - run: npm run build:web
 
   omr-engine:
