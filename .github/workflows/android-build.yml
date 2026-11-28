@@ -1,0 +1,49 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: Canonical HTTPS URL of the deployed OMR Exam Checker Next.js app
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Android debug APK
+    runs-on: ubuntu-latest
+    env:
+      CAPACITOR_SERVER_URL: ${{ inputs.app_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Validate application URL
+        run: node -e "const u = new URL(process.env.CAPACITOR_SERVER_URL); if (u.protocol !== 'https:') process.exit(1);"
+      - run: npm install
+      - run: npx cap add android
+      - run: node scripts/android-configure.mjs
+      - run: npx cap sync android
+      - name: Build APK and collect signing fingerprint
+        run: |
+          cd android
+          ./gradlew assembleDebug signingReport
+          cd ..
+          keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk > android-debug-certificate.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omr-exam-checker-android-debug
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android-debug-certificate.txt
+          if-no-files-found: error

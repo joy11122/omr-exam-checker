@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Capacitor } from "@capacitor/core";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { AlertCircle, Camera, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
+import { AlertCircle, Camera as CameraIcon, CheckCircle2, FileImage, LoaderCircle, UploadCloud } from "lucide-react";
 
 type RegistrationResult = { status: "detected" | "review_required"; detected_count: number; expected_count: number; minimum_confidence: number | null; next_step: "perspective_correction" | "manual_alignment"; marks: Record<string, { confidence: number }> };
 
@@ -241,13 +243,66 @@ export function ScanUpload() {
     }
   }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    setFile(event.target.files?.[0] ?? null);
+  const selectFile = useCallback((nextFile: File | null) => {
+    setFile(nextFile);
     setError("");
     setResult(null);
     setSavedScanId(null);
     setRegistration(null);
     setCorrectedUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; });
+  }, []);
+
+  async function handleTakePhoto() {
+    if (!Capacitor.isNativePlatform()) {
+      cameraRef.current?.click();
+      return;
+    }
+    setError("");
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 92,
+        width: 3000,
+        height: 4000,
+        allowEditing: false,
+        correctOrientation: true,
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera,
+      });
+      if (!photo.webPath) throw new Error("The camera did not return an image.");
+      const response = await fetch(photo.webPath);
+      if (!response.ok) throw new Error("Unable to read the captured image.");
+      const blob = await response.blob();
+      const mimeType = blob.type || (photo.format === "png" ? "image/png" : "image/jpeg");
+      const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+      selectFile(new File([blob], `omr-${Date.now()}.${extension}`, { type: mimeType, lastModified: Date.now() }));
+    } catch (caught) {
+      if (caught instanceof Error && /cancel/i.test(caught.message)) return;
+      setError(caught instanceof Error ? caught.message : "Unable to open the Android camera.");
+    }
+  }
+
+  useEffect(() => {
+    const handleRestoredCamera = (event: Event) => {
+      const photo = (event as CustomEvent<{ webPath?: string; format?: string }>).detail;
+      if (!photo?.webPath) return;
+      void fetch(photo.webPath)
+        .then((response) => {
+          if (!response.ok) throw new Error("Unable to restore the captured image.");
+          return response.blob();
+        })
+        .then((blob) => {
+          const mimeType = blob.type || (photo.format === "png" ? "image/png" : "image/jpeg");
+          const extension = mimeType === "image/png" ? "png" : "jpg";
+          selectFile(new File([blob], `omr-restored-${Date.now()}.${extension}`, { type: mimeType, lastModified: Date.now() }));
+        })
+        .catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Unable to restore the captured image."));
+    };
+    window.addEventListener("omr-native-camera-restored", handleRestoredCamera);
+    return () => window.removeEventListener("omr-native-camera-restored", handleRestoredCamera);
+  }, [selectFile]);
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    selectFile(event.target.files?.[0] ?? null);
   }
 
   return (
@@ -296,14 +351,14 @@ export function ScanUpload() {
             <span>{file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB · ${file.type || "Unknown type"}` : "Use the camera or choose an image below"}</span>
           </button>
           <div className="scan-capture-actions">
-            <button className="button button-secondary" type="button" onClick={() => cameraRef.current?.click()}>
-              <Camera size={16} /> Take photo
+            <button className="button button-secondary" type="button" onClick={() => void handleTakePhoto()}>
+              <CameraIcon size={16} /> Take photo
             </button>
             <button className="button button-secondary" type="button" onClick={() => inputRef.current?.click()}>
               <FileImage size={16} /> Choose from device
             </button>
           </div>
-          <p id="scan-upload-help" className="scan-upload-help">On Android, Take photo opens the rear camera when supported. You can also choose an existing image. The image is validated and saved privately to this institution’s scan history.</p>
+          <p id="scan-upload-help" className="scan-upload-help">In the Android app, Take photo uses the native camera and restores a capture if Android temporarily closes the app. In a browser, it opens the device camera when supported. You can also choose an existing image. The image is validated and saved privately to this institution’s scan history.</p>
           {error ? <p className="form-alert error" role="alert"><AlertCircle size={16} /> {error}</p> : null}
           <button className="button button-primary" type="submit" disabled={!file || busy}>
             {busy ? <><LoaderCircle className="spin" size={16} /> Checking image…</> : <><FileImage size={16} /> Validate image</>}
