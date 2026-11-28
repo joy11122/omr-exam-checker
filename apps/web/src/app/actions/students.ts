@@ -35,6 +35,7 @@ export async function createStudent(formData: FormData) {
     await Student.create({ ...parsed.data, institutionId: new mongoose.Types.ObjectId(parsed.data.institutionId) });
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/students?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/students?error=plan_limit_reached");
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/students?error=student_code_exists");
     redirect("/students?error=student_create_failed");
   }
@@ -130,6 +131,7 @@ export async function importStudents(formData: FormData) {
     }
   } catch (error) {
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/students?error=forbidden");
+    if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") redirect("/students?error=plan_limit_reached");
     if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) redirect("/students?error=some_codes_exist");
     redirect("/students?error=import_failed");
