@@ -20,7 +20,9 @@
     "android:sync": "node scripts/android-configure.mjs && cap sync android --project-dir apps/web",
     "android:open": "cap open android --project-dir apps/web",
     "android:build": "npm run android:sync && node scripts/android-build.mjs",
-    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs"
+    "test:native": "node --experimental-strip-types --test apps/web/src/components/native/native-app-bridge.test.mjs apps/web/src/lib/auth/google-identity.test.mjs",
+    "smoke:release": "node scripts/release-smoke.mjs",
+    "check:android:scripts": "node --check scripts/android-configure.mjs && node --check scripts/verify-android-project.mjs && node --check scripts/android-build.mjs && node --check scripts/release-smoke.mjs"
   },
   "engines": {
     "node": ">=22.0.0"
