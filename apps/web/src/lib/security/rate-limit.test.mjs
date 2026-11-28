@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getClientAddress, isRateLimitAllowed } from "./rate-limit.ts";
+import { getClientAddress, isRateLimitAllowed } from "./rate-limit-utils.ts";
 
 test("prefers a valid proxy-provided client address", () => {
   const headers = new Headers({ "x-real-ip": "203.0.113.7", "x-forwarded-for": "198.51.100.2" });
