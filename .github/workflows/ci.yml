@@ -67,9 +67,9 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - run: npm install
-      - run: npx cap add android --project-dir apps/web
+      - run: cd apps/web && npx cap add android
       - run: node scripts/android-configure.mjs
-      - run: npx cap sync android --project-dir apps/web
+      - run: cd apps/web && npx cap sync android
       - run: node scripts/verify-android-project.mjs
       - run: cd apps/web/android && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
