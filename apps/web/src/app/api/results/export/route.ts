@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import mongoose from "mongoose";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb/client";
@@ -15,6 +16,9 @@ function csvCell(value: unknown) {
 }
 
 export async function GET(request: Request) {
+  const rateLimit = rateLimitResponse(await checkRequestRateLimit(request, { scope: "results:export", limit: 20, windowMs: 10 * 60 * 1000 }));
+  if (rateLimit) return rateLimit;
+
   try {
     const session = await auth();
     if (!session?.user?.id || !mongoose.isValidObjectId(session.user.id)) {
