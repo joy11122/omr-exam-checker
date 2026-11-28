@@ -118,6 +118,7 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.name === "TimeoutError") {
       return NextResponse.json({ error: "Image processing timed out. Please try again." }, { status: 504 });
     }
+    if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You do not have permission to upload scans for this institution." }, { status: 403 });
     if (error instanceof Error && error.message === "PLAN_LIMIT_REACHED") return NextResponse.json({ error: "Your monthly scan allowance has been reached. Upgrade the institution plan to continue." }, { status: 402 });
     console.error("Scan intake request failed", error);
     return NextResponse.json({ error: "Unable to process the scan right now. Please try again." }, { status: 500 });
