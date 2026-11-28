@@ -30,6 +30,7 @@ jobs:
       - run: npm run test:reports
       - run: npm run test:security
       - run: npm run test:native
+      - run: npm run check:android:scripts
       - run: npm run build:web
 
   omr-engine:
