@@ -29,13 +29,19 @@ function pass(name) {
 
 const live = await request("/api/health/live");
 assert.equal(live.status, 200, "Liveness endpoint must return HTTP 200.");
-assert.equal((await live.json()).status, "ok", "Liveness payload is invalid.");
-pass("liveness endpoint");
+const livePayload = await live.json();
+assert.deepEqual(Object.keys(livePayload).sort(), ["status"], "Liveness endpoint must expose only its status field.");
+assert.equal(livePayload.status, "ok", "Liveness payload is invalid.");
+assert.match(live.headers.get("cache-control") ?? "", /no-store/, "Liveness response must not be cached.");
+pass("uncached liveness endpoint with minimal response");
 
 const ready = await request("/api/health/ready");
 assert.equal(ready.status, 200, "Readiness endpoint must return HTTP 200; verify MongoDB connectivity.");
-assert.equal((await ready.json()).status, "ready", "Readiness payload is invalid.");
-pass("MongoDB readiness endpoint");
+const readyPayload = await ready.json();
+assert.deepEqual(Object.keys(readyPayload).sort(), ["status"], "Readiness endpoint must expose only its status field.");
+assert.equal(readyPayload.status, "ready", "Readiness payload is invalid.");
+assert.match(ready.headers.get("cache-control") ?? "", /no-store/, "Readiness response must not be cached.");
+pass("uncached MongoDB readiness endpoint with minimal response");
 
 for (const path of ["/login", "/register"]) {
   const response = await request(path);
