@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   web:
-    name: Web lint, types, grading tests, and production build
+    name: Web lint, types, grading and analytics tests, and production build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -25,6 +25,7 @@ jobs:
       - run: npm run lint:web
       - run: npm run typecheck:web
       - run: npm run test:grading
+      - run: npm run test:analytics
       - run: npm run build:web
 
   omr-engine:
