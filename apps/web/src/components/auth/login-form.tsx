@@ -3,7 +3,11 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { Capacitor } from "@capacitor/core";
+import { SocialLogin } from "@capgo/capacitor-social-login";
 import { ArrowRight, LoaderCircle, LockKeyhole } from "lucide-react";
+
+let nativeGoogleInitialization: Promise<void> | null = null;
 
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
@@ -19,7 +23,36 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     router.push("/dashboard");
     router.refresh();
   }
-  async function googleSignIn() { setLoading(true); await signIn("google", { redirectTo: "/dashboard" }); }
+  async function googleSignIn() {
+    setLoading(true);
+    setError("");
+    try {
+      if (Capacitor.getPlatform() === "android") {
+        const webClientId = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+        if (!webClientId) throw new Error("Native Google sign-in is not configured for this Android build.");
+        nativeGoogleInitialization ??= SocialLogin.initialize({
+          google: {
+            webClientId,
+            mode: "online",
+            skipAuthOnlyAuthorizationAfterSignIn: true,
+          },
+        }).then(() => undefined);
+        await nativeGoogleInitialization;
+        const login = await SocialLogin.login({ provider: "google", options: {} });
+        const idToken = (login.result as { idToken?: string }).idToken;
+        if (!idToken) throw new Error("Google did not return a verified identity token.");
+        const result = await signIn("native-google", { idToken, redirect: false });
+        if (result?.error) throw new Error("Google sign-in could not be completed. Please try again.");
+        router.replace("/dashboard");
+        router.refresh();
+        return;
+      }
+      await signIn("google", { redirectTo: "/dashboard" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Google sign-in could not be completed.");
+      setLoading(false);
+    }
+  }
   return <div className="auth-form-wrap">
     {searchParams.get("registered") ? <p className="form-alert success" role="status">Account created. Sign in with your email and password.</p> : null}
     {searchParams.get("error") ? <p className="form-alert error" role="alert">We could not complete that request. Please try again.</p> : null}
