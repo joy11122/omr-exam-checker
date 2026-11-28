@@ -7,7 +7,7 @@ import { requireInstitutionRole } from "@/lib/tenancy/authorization";
 import { parseReportFilters } from "@/lib/analytics/report-filters";
 import { ExamResult } from "@/models/exam-result";
 export const runtime="nodejs";
-function cell(value:unknown){const raw=String(value??"");const safe=/^[=+@\\-\\t\\r]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"';}
+function cell(value:unknown){const raw=String(value??"");const safe=/^[=+@\-\t\r]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"';}
 export async function GET(request:Request){
  try{
   const session=await auth();
@@ -33,7 +33,7 @@ export async function GET(request:Request){
   if(latest.length>10000)return NextResponse.json({error:"Export exceeds 10,000 rows. Narrow the filters and retry."},{status:413});
   const header=["Exam","Exam code","Student code","Student name","Class","Section","Roll","Marks","Maximum marks","Percentage","Correct","Incorrect","Blank","Revision","Published at"];
   const rows=[header,...latest.map(r=>[r.examTitle,r.examCode,r.studentCode,r.studentName,r.className,r.section,r.rollNumber,r.totalMarksObtained,r.totalMaximumMarks,Number(r.percentage??0).toFixed(2),r.totalCorrect,r.totalIncorrect,r.totalBlank,r.revision,r.publishedAt?new Date(String(r.publishedAt)).toISOString():""])];
-  const csv="\\uFEFF"+rows.map(row=>row.map(cell).join(",")).join("\\r\\n");
+  const csv="\uFEFF"+rows.map(row=>row.map(cell).join(",")).join("\r\n");
   return new Response(csv,{headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":'attachment; filename="omr-advanced-report.csv"',"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
  }catch(error){
   if(error instanceof Error&&error.message==="FORBIDDEN")return NextResponse.json({error:"You do not have permission to export this report."},{status:403});
