@@ -11,7 +11,7 @@ try {
 
 const scheme = "omrexamchecker";
 if (!manifest.includes(`android:scheme="${scheme}"`)) {
-  const activityPattern = /(<activity\b[^>]*android:name="\.MainActivity"[^>]*>)([\s\S]*?)(<\/activity>)/;
+  const activityPattern = /(<activity\\b[^>]*android:name="(?:\\.MainActivity|com\\.omrexamchecker\\.app\\.MainActivity)"[^>]*>)([\\s\\S]*?)(<\\/activity>)/;
   if (!activityPattern.test(manifest)) {
     throw new Error("Could not find the Capacitor MainActivity in AndroidManifest.xml.");
   }
