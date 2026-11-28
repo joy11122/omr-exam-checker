@@ -17,7 +17,7 @@ export async function getInstitutionUsage(institutionId: string) {
     Exam.countDocuments({ institutionId: tenant }),
     Membership.countDocuments({ institutionId: tenant }),
     Scan.countDocuments({ institutionId: tenant, createdAt: { $gte: monthStart } }),
-    Subscription.findOne({ institutionId: tenant }).lean().exec(),
+    Subscription.findOne({ institutionId: tenant }).lean().exec() as unknown as Promise<{ plan?: PlanId; status?: string } | null>,
   ]);
   const plan = (subscription?.plan ?? "free") as PlanId;
   const limits = PLAN_CATALOG[plan].limits;
